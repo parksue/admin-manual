@@ -5,370 +5,352 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>프로그램 매뉴얼</title>
 <style>
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:'Pretendard',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f6f7fb;color:#1a1a2e;min-height:100vh}
-
-  /* 상단 헤더 */
-  .header{background:#fff;border-bottom:1px solid #e8eaf0;padding:0 1.5rem;position:sticky;top:0;z-index:100}
-  .header-inner{max-width:900px;margin:0 auto;display:flex;align-items:center;gap:1rem;height:56px}
-  .logo{font-size:16px;font-weight:600;color:#1a1a2e;white-space:nowrap;cursor:pointer}
-  .logo span{color:#1a56db}
-  .search-wrap{flex:1;position:relative;max-width:480px}
-  .search-wrap input{width:100%;padding:8px 36px 8px 14px;border:1.5px solid #e2e5ef;border-radius:10px;font-size:14px;background:#f6f7fb;color:#1a1a2e;outline:none;transition:border-color .15s,background .15s}
-  .search-wrap input:focus{border-color:#1a56db;background:#fff}
-  .search-wrap .si{position:absolute;right:11px;top:50%;transform:translateY(-50%);color:#9aa0b4;font-size:15px;pointer-events:none}
-  .search-drop{display:none;position:absolute;top:calc(100% + 6px);left:0;right:0;background:#fff;border:1px solid #e2e5ef;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.08);z-index:200;overflow:hidden}
-  .search-drop.show{display:block}
-  .sd-item{padding:10px 14px;cursor:pointer;border-bottom:1px solid #f0f1f5;font-size:14px}
-  .sd-item:last-child{border-bottom:none}
-  .sd-item:hover{background:#f0f4ff}
-  .sd-item .sd-cat{font-size:11px;color:#9aa0b4;margin-top:2px}
-  .sd-none{padding:14px;text-align:center;font-size:13px;color:#9aa0b4}
-
-  /* 레이아웃 */
-  .container{max-width:900px;margin:0 auto;padding:1.5rem 1rem 4rem}
-
-  /* 홈 */
-  .home-hero{text-align:center;padding:2rem 0 1.5rem}
-  .home-hero h1{font-size:22px;font-weight:600;margin-bottom:6px}
-  .home-hero p{font-size:14px;color:#6b7280}
-
-  .cat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-top:1rem}
-  .cat-card{background:#fff;border:1px solid #e8eaf0;border-radius:14px;padding:1.2rem 1rem;cursor:pointer;transition:box-shadow .15s,border-color .15s,transform .1s}
-  .cat-card:hover{border-color:#a5b4fc;box-shadow:0 4px 16px rgba(26,86,219,.1);transform:translateY(-1px)}
-  .cat-icon{font-size:26px;margin-bottom:10px}
-  .cat-name{font-size:15px;font-weight:600}
-  .cat-sub{font-size:12px;color:#9aa0b4;margin-top:4px}
-
-  /* 스켈레톤 로딩 */
-  .skeleton{background:linear-gradient(90deg,#f0f1f5 25%,#e4e6ee 50%,#f0f1f5 75%);background-size:200%;animation:shimmer 1.2s infinite;border-radius:8px;height:18px;margin-bottom:8px}
-  @keyframes shimmer{0%{background-position:200%}100%{background-position:-200%}}
-
-  /* 상세 페이지 */
-  .detail-view{display:none}
-  .detail-view.show{display:block}
-
-  .breadcrumb{display:flex;align-items:center;gap:6px;font-size:13px;color:#9aa0b4;margin-bottom:1.2rem;flex-wrap:wrap}
-  .breadcrumb span{cursor:pointer;color:#6b7280}
-  .breadcrumb span:hover{color:#1a56db}
-  .breadcrumb .sep{color:#d1d5db}
-  .breadcrumb .current{color:#1a1a2e;font-weight:500;cursor:default}
-
-  /* 2컬럼: 사이드 + 컨텐츠 */
-  .detail-layout{display:grid;grid-template-columns:220px 1fr;gap:16px;align-items:start}
-  .sidebar{background:#fff;border:1px solid #e8eaf0;border-radius:14px;overflow:hidden;position:sticky;top:72px}
-  .sidebar-head{padding:.8rem 1rem;font-size:13px;font-weight:600;color:#6b7280;border-bottom:1px solid #f0f1f5;background:#f8f9fc}
-  .sub-list{padding:.4rem 0}
-  .sub-item{padding:.55rem 1rem;font-size:13px;cursor:pointer;color:#374151;transition:background .1s,color .1s;border-left:2px solid transparent}
-  .sub-item:hover{background:#f0f4ff;color:#1a56db}
-  .sub-item.active{background:#eef2ff;color:#1a56db;font-weight:500;border-left-color:#1a56db}
-
-  /* 콘텐츠 영역 */
-  .content-area{background:#fff;border:1px solid #e8eaf0;border-radius:14px;min-height:300px;overflow:hidden}
-  .content-placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4rem 2rem;color:#9aa0b4;font-size:14px;gap:10px}
-  .content-placeholder .ph-icon{font-size:36px}
-  .content-header{padding:1.2rem 1.5rem .8rem;border-bottom:1px solid #f0f1f5}
-  .content-header h2{font-size:18px;font-weight:600}
-  .content-body{padding:1.2rem 1.5rem 2rem}
-
-  /* 노션 블록 렌더링 */
-  .notion-paragraph{font-size:14px;line-height:1.8;color:#374151;margin-bottom:.6rem}
-  .notion-heading-1{font-size:20px;font-weight:700;margin:1.5rem 0 .6rem;color:#1a1a2e}
-  .notion-heading-2{font-size:17px;font-weight:600;margin:1.2rem 0 .5rem;color:#1a1a2e}
-  .notion-heading-3{font-size:15px;font-weight:600;margin:1rem 0 .4rem;color:#374151}
-  .notion-bulleted-list{padding-left:1.4rem;margin-bottom:.6rem}
-  .notion-bulleted-list li{font-size:14px;line-height:1.8;color:#374151;margin-bottom:.2rem}
-  .notion-numbered-list{padding-left:1.4rem;margin-bottom:.6rem}
-  .notion-numbered-list li{font-size:14px;line-height:1.8;color:#374151;margin-bottom:.2rem}
-  .notion-image{margin:1rem 0;text-align:center}
-  .notion-image img{max-width:100%;border-radius:8px;border:1px solid #e8eaf0}
-  .notion-image .caption{font-size:12px;color:#9aa0b4;margin-top:6px}
-  .notion-callout{background:#f0f4ff;border-left:3px solid #1a56db;border-radius:8px;padding:.8rem 1rem;margin:.8rem 0;font-size:14px;color:#374151;display:flex;gap:10px}
-  .notion-callout .icon{font-size:18px;flex-shrink:0}
-  .notion-quote{border-left:3px solid #d1d5db;padding:.6rem 1rem;margin:.8rem 0;font-size:14px;color:#6b7280;font-style:italic}
-  .notion-code{background:#f6f7fb;border:1px solid #e8eaf0;border-radius:8px;padding:.8rem 1rem;font-family:'D2Coding',monospace;font-size:13px;overflow-x:auto;margin:.8rem 0}
-  .notion-divider{border:none;border-top:1px solid #f0f1f5;margin:1rem 0}
-  .notion-toggle summary{font-size:14px;font-weight:500;cursor:pointer;padding:.4rem 0;color:#374151}
-  .notion-toggle summary:hover{color:#1a56db}
-  .notion-toggle-content{padding:.4rem 0 .4rem 1.2rem;border-left:2px solid #e8eaf0;margin-top:.4rem}
-  .notion-table{width:100%;border-collapse:collapse;margin:.8rem 0;font-size:13px}
-  .notion-table th,.notion-table td{border:1px solid #e8eaf0;padding:.5rem .8rem;text-align:left}
-  .notion-table th{background:#f6f7fb;font-weight:600}
-  .notion-table tr:hover td{background:#f9fafc}
-  .notion-todo{display:flex;align-items:flex-start;gap:.5rem;margin:.3rem 0;font-size:14px;color:#374151}
-  .notion-todo input{margin-top:3px;flex-shrink:0}
-  .rich-bold{font-weight:600}
-  .rich-italic{font-style:italic}
-  .rich-underline{text-decoration:underline}
-  .rich-strike{text-decoration:line-through}
-  .rich-code{background:#f0f1f5;padding:1px 5px;border-radius:4px;font-family:monospace;font-size:12px}
-  .rich-link{color:#1a56db;text-decoration:none}
-  .rich-link:hover{text-decoration:underline}
-  .notion-child-page{display:block;padding:.5rem .8rem;margin:.3rem 0;background:#f6f7fb;border:1px solid #e8eaf0;border-radius:8px;font-size:14px;color:#1a56db;cursor:pointer;text-decoration:none}
-  .notion-child-page:hover{background:#eef2ff}
-
-  /* 로딩 */
-  .loading{padding:2rem;text-align:center;color:#9aa0b4;font-size:14px}
-  .spinner{display:inline-block;width:20px;height:20px;border:2px solid #e8eaf0;border-top-color:#1a56db;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:8px}
-  @keyframes spin{to{transform:rotate(360deg)}}
-
-  /* 모바일 */
-  @media(max-width:640px){
-    .header-inner{gap:.6rem}
-    .logo{font-size:14px}
-    .detail-layout{grid-template-columns:1fr}
-    .sidebar{position:static}
-    .cat-grid{grid-template-columns:repeat(2,1fr)}
-    .cat-card{padding:.9rem .8rem}
-    .content-body{padding:1rem}
-    .content-header{padding:1rem 1rem .6rem}
-  }
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f6f7fb;color:#1a1a2e;min-height:100vh}
+.header{background:#fff;border-bottom:1px solid #e8eaf0;padding:0 1.5rem;position:sticky;top:0;z-index:100}
+.header-inner{max-width:960px;margin:0 auto;display:flex;align-items:center;gap:1rem;height:56px}
+.logo{font-size:15px;font-weight:700;color:#1a1a2e;white-space:nowrap;cursor:pointer;display:flex;align-items:center;gap:6px}
+.logo-dot{color:#1a56db}
+.h-search{flex:1;position:relative;max-width:380px}
+.h-search input{width:100%;padding:7px 32px 7px 12px;border:1.5px solid #e2e5ef;border-radius:10px;font-size:13px;background:#f6f7fb;color:#1a1a2e;outline:none;transition:border-color .15s}
+.h-search input:focus{border-color:#1a56db;background:#fff}
+.h-search .si{position:absolute;right:10px;top:50%;transform:translateY(-50%);color:#b0b5c4;font-size:13px;pointer-events:none}
+.sdrop{display:none;position:absolute;top:calc(100%+6px);left:0;right:0;background:#fff;border:1px solid #e2e5ef;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.09);z-index:300;overflow:hidden}
+.sdrop.show{display:block}
+.sd-item{padding:9px 14px;cursor:pointer;border-bottom:1px solid #f2f3f7;font-size:13px;color:#1a1a2e}
+.sd-item:last-child{border-bottom:none}
+.sd-item:hover{background:#f0f4ff}
+.sd-item .sd-sub{font-size:11px;color:#9aa0b4;margin-top:1px}
+.sd-none{padding:14px;text-align:center;font-size:13px;color:#9aa0b4}
+.container{max-width:960px;margin:0 auto;padding:2rem 1rem 5rem}
+/* 홈 */
+.hero{text-align:center;padding:2.5rem 0 1rem}
+.hero h1{font-size:26px;font-weight:700;margin-bottom:8px;color:#1a1a2e}
+.hero p{font-size:14px;color:#6b7280;margin-bottom:1.6rem}
+.home-search{position:relative;max-width:520px;margin:0 auto 2.5rem}
+.home-search input{width:100%;padding:15px 50px 15px 20px;border:2px solid #e2e5ef;border-radius:16px;font-size:15px;background:#fff;color:#1a1a2e;outline:none;transition:border-color .15s,box-shadow .15s;box-shadow:0 2px 16px rgba(0,0,0,.06)}
+.home-search input:focus{border-color:#1a56db;box-shadow:0 4px 24px rgba(26,86,219,.13)}
+.home-search .hsi{position:absolute;right:18px;top:50%;transform:translateY(-50%);font-size:20px;pointer-events:none}
+.home-sdrop{display:none;position:absolute;top:calc(100%+8px);left:0;right:0;background:#fff;border:1px solid #e2e5ef;border-radius:14px;box-shadow:0 8px 28px rgba(0,0,0,.1);z-index:300;overflow:hidden}
+.home-sdrop.show{display:block}
+.sec-label{font-size:11px;font-weight:700;color:#b0b5c4;letter-spacing:.08em;text-transform:uppercase;margin-bottom:.9rem}
+.cat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
+.cat-card{background:#fff;border:1.5px solid #e8eaf0;border-radius:16px;padding:1.3rem 1.1rem;cursor:pointer;transition:border-color .15s,box-shadow .15s,transform .12s}
+.cat-card:hover{border-color:#93a5fb;box-shadow:0 6px 20px rgba(26,86,219,.11);transform:translateY(-2px)}
+.cat-icon{font-size:30px;margin-bottom:10px;line-height:1}
+.cat-name{font-size:15px;font-weight:600;color:#1a1a2e}
+.cat-desc{font-size:12px;color:#9aa0b4;margin-top:5px;line-height:1.55}
+/* 상세 */
+.detail{display:none}
+.detail.show{display:block}
+.bc{display:flex;align-items:center;gap:5px;font-size:13px;color:#b0b5c4;margin-bottom:1.3rem;flex-wrap:wrap}
+.bc-link{cursor:pointer;color:#6b7280}
+.bc-link:hover{color:#1a56db}
+.bc-sep{color:#d1d5db}
+.bc-cur{color:#1a1a2e;font-weight:500}
+.layout{display:grid;grid-template-columns:230px 1fr;gap:16px;align-items:start}
+.sidebar{background:#fff;border:1.5px solid #e8eaf0;border-radius:16px;overflow:hidden;position:sticky;top:72px;max-height:calc(100vh - 100px);overflow-y:auto}
+.sb-head{padding:.85rem 1rem;font-size:12px;font-weight:700;color:#9aa0b4;border-bottom:1px solid #f0f1f5;background:#fafbfc;letter-spacing:.04em;text-transform:uppercase}
+.sb-list{padding:.4rem 0}
+.sb-item{padding:.6rem 1rem;font-size:13px;cursor:pointer;color:#374151;border-left:2px solid transparent;transition:background .1s,color .1s;line-height:1.4}
+.sb-item:hover{background:#f0f4ff;color:#1a56db}
+.sb-item.active{background:#eef2ff;color:#1a56db;font-weight:600;border-left-color:#1a56db}
+.content{background:#fff;border:1.5px solid #e8eaf0;border-radius:16px;min-height:360px;overflow:hidden}
+.c-placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:5rem 2rem;color:#b0b5c4;font-size:14px;gap:10px}
+.c-ph-icon{font-size:40px}
+.c-head{padding:1.3rem 1.6rem 1rem;border-bottom:1px solid #f0f1f5}
+.c-head h2{font-size:19px;font-weight:700;color:#1a1a2e}
+.c-body{padding:1.3rem 1.6rem 2.5rem}
+/* 노션 블록 */
+.nb-p{font-size:14px;line-height:1.85;color:#374151;margin-bottom:.6rem}
+.nb-h1{font-size:21px;font-weight:700;margin:1.6rem 0 .7rem;color:#1a1a2e}
+.nb-h2{font-size:17px;font-weight:700;margin:1.3rem 0 .5rem;color:#1a1a2e}
+.nb-h3{font-size:15px;font-weight:600;margin:1rem 0 .4rem;color:#374151}
+.nb-ul{padding-left:1.4rem;margin-bottom:.7rem}
+.nb-ul li{font-size:14px;line-height:1.8;color:#374151;margin-bottom:.2rem}
+.nb-ol{padding-left:1.4rem;margin-bottom:.7rem}
+.nb-ol li{font-size:14px;line-height:1.8;color:#374151;margin-bottom:.2rem}
+.nb-img{margin:1rem 0;text-align:center}
+.nb-img img{max-width:100%;border-radius:10px;border:1px solid #e8eaf0}
+.nb-img .cap{font-size:12px;color:#9aa0b4;margin-top:6px}
+.nb-callout{background:#eef2ff;border-left:3px solid #1a56db;border-radius:10px;padding:.85rem 1rem;margin:.8rem 0;font-size:14px;color:#374151;display:flex;gap:10px;line-height:1.7}
+.nb-callout .ico{font-size:18px;flex-shrink:0;margin-top:1px}
+.nb-quote{border-left:3px solid #d1d5db;padding:.6rem 1rem;margin:.8rem 0;font-size:14px;color:#6b7280;font-style:italic}
+.nb-code{background:#f6f7fb;border:1px solid #e8eaf0;border-radius:8px;padding:.85rem 1rem;font-family:'D2Coding',monospace;font-size:13px;overflow-x:auto;margin:.8rem 0;line-height:1.6}
+.nb-hr{border:none;border-top:1px solid #f0f1f5;margin:1.1rem 0}
+.nb-toggle summary{font-size:14px;font-weight:600;cursor:pointer;padding:.4rem 0;color:#374151;user-select:none}
+.nb-toggle summary:hover{color:#1a56db}
+.nb-toggle-body{padding:.4rem 0 .4rem 1.3rem;border-left:2px solid #e8eaf0;margin-top:.4rem}
+.nb-table{width:100%;border-collapse:collapse;margin:.9rem 0;font-size:13px}
+.nb-table th,.nb-table td{border:1px solid #e8eaf0;padding:.55rem .85rem;text-align:left;line-height:1.5}
+.nb-table th{background:#f6f7fb;font-weight:600;color:#374151}
+.nb-table tr:hover td{background:#fafbfc}
+.nb-todo{display:flex;align-items:flex-start;gap:.5rem;margin:.35rem 0;font-size:14px;color:#374151;line-height:1.6}
+.nb-todo input{margin-top:3px;flex-shrink:0;accent-color:#1a56db}
+.r-bold{font-weight:700}
+.r-italic{font-style:italic}
+.r-under{text-decoration:underline}
+.r-strike{text-decoration:line-through}
+.r-code{background:#f0f1f5;padding:1px 6px;border-radius:4px;font-family:monospace;font-size:12px}
+.r-link{color:#1a56db;text-decoration:none}
+.r-link:hover{text-decoration:underline}
+/* 로딩 */
+.loading{padding:2.5rem;text-align:center;color:#b0b5c4;font-size:14px}
+.spin{display:inline-block;width:18px;height:18px;border:2px solid #e8eaf0;border-top-color:#1a56db;border-radius:50%;animation:sp .7s linear infinite;vertical-align:middle;margin-right:7px}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media(max-width:660px){
+  .h-search{display:none}
+  .layout{grid-template-columns:1fr}
+  .sidebar{position:static;max-height:none}
+  .cat-grid{grid-template-columns:repeat(2,1fr)}
+  .cat-card{padding:1rem .9rem}
+  .c-body{padding:1rem 1rem 2rem}
+  .c-head{padding:1rem 1rem .8rem}
+  .hero h1{font-size:20px}
+}
 </style>
 </head>
 <body>
-
 <div class="header">
   <div class="header-inner">
-    <div class="logo" onclick="goHome()">📋 <span>프로그램</span> 매뉴얼</div>
-    <div class="search-wrap">
-      <input type="text" id="searchInput" placeholder="검색..." autocomplete="off">
+    <div class="logo" onclick="goHome()">📋 프로그램<span class="logo-dot"> 매뉴얼</span></div>
+    <div class="h-search">
+      <input type="text" id="hsi" placeholder="검색..." autocomplete="off">
       <span class="si">🔍</span>
-      <div class="search-drop" id="searchDrop"></div>
+      <div class="sdrop" id="hsd"></div>
     </div>
   </div>
 </div>
 
 <div class="container">
-  <!-- 홈 뷰 -->
   <div id="homeView">
-    <div class="home-hero">
+    <div class="hero">
       <h1>무엇을 도와드릴까요?</h1>
-      <p>카테고리를 선택하거나 검색어를 입력해 원하는 내용을 찾아보세요</p>
+      <p>찾고 싶은 내용을 검색하거나, 아래 카테고리를 선택해 주세요</p>
+      <div class="home-search">
+        <input type="text" id="hmsi" placeholder="검색어를 입력하세요..." autocomplete="off">
+        <span class="hsi">🔍</span>
+        <div class="home-sdrop" id="hmsd"></div>
+      </div>
     </div>
-    <div class="cat-grid" id="catGrid">
-      <div class="loading"><span class="spinner"></span>불러오는 중...</div>
-    </div>
+    <div class="sec-label">카테고리</div>
+    <div class="cat-grid" id="catGrid"><div class="loading"><span class="spin"></span>불러오는 중...</div></div>
   </div>
 
-  <!-- 상세 뷰 -->
-  <div class="detail-view" id="detailView">
-    <div class="breadcrumb" id="breadcrumb"></div>
-    <div class="detail-layout">
+  <div class="detail" id="detailView">
+    <div class="bc" id="bc"></div>
+    <div class="layout">
       <div class="sidebar">
-        <div class="sidebar-head" id="sidebarHead">세부 항목</div>
-        <div class="sub-list" id="subList"></div>
+        <div class="sb-head" id="sbHead">항목</div>
+        <div class="sb-list" id="sbList"></div>
       </div>
-      <div class="content-area" id="contentArea">
-        <div class="content-placeholder">
-          <div class="ph-icon">👈</div>
-          <div>왼쪽 항목을 선택해 내용을 확인하세요</div>
-        </div>
+      <div class="content" id="contentArea">
+        <div class="c-placeholder"><div class="c-ph-icon">👈</div><div>왼쪽 항목을 선택해 주세요</div></div>
       </div>
     </div>
   </div>
 </div>
 
 <script>
-var allPages = []; // {catTitle, catId, subTitle, subId}
-var currentCat = null;
-var currentSub = null;
-var catIcons = ['📄','📁','📋','🗂️','📑','📂','🗃️','📰','📃','📜'];
+var allArticles=[], allCats=[], currentCat=null;
 
-// 카테고리 목록 로드
-async function loadCategories() {
-  try {
-    var res = await fetch('/api/categories');
-    var cats = await res.json();
-    renderCategories(cats);
-    // 검색용 인덱스 구축
-    buildSearchIndex(cats);
-  } catch(e) {
-    document.getElementById('catGrid').innerHTML = '<div style="color:#e24b4a;font-size:14px;padding:1rem">카테고리를 불러오지 못했습니다. 서버 상태를 확인해 주세요.</div>';
+async function loadCategories(){
+  try{
+    var r=await fetch('/api/categories');
+    allCats=await r.json();
+    renderCats(allCats);
+    buildIndex();
+  }catch(e){
+    document.getElementById('catGrid').innerHTML='<div style="color:#e24b4a;font-size:14px">카테고리를 불러오지 못했습니다.</div>';
   }
 }
 
-function renderCategories(cats) {
-  var grid = document.getElementById('catGrid');
-  if(!cats.length) { grid.innerHTML = '<div style="color:#9aa0b4;font-size:14px;padding:1rem">등록된 카테고리가 없습니다.</div>'; return; }
-  grid.innerHTML = cats.map(function(cat, i) {
-    return '<div class="cat-card" onclick="openCategory(\'' + cat.id + '\',\'' + escHtml(cat.title) + '\')">' +
-      '<div class="cat-icon">' + (catIcons[i % catIcons.length]) + '</div>' +
-      '<div class="cat-name">' + escHtml(cat.title) + '</div>' +
-      '<div class="cat-sub">클릭해서 내용 보기</div>' +
+function renderCats(cats){
+  var g=document.getElementById('catGrid');
+  if(!cats.length){g.innerHTML='<div style="color:#9aa0b4;font-size:14px">등록된 카테고리가 없습니다.</div>';return;}
+  g.innerHTML=cats.map(function(c){
+    return '<div class="cat-card" onclick="openCat(\''+c.id+'\',\''+esc(c.title)+'\')">'+
+      '<div class="cat-icon">'+(c.icon||'📄')+'</div>'+
+      '<div class="cat-name">'+esc(c.title)+'</div>'+
+      (c.desc?'<div class="cat-desc">'+esc(c.desc)+'</div>':'')+
       '</div>';
   }).join('');
 }
 
-async function buildSearchIndex(cats) {
-  // 각 카테고리의 하위 페이지를 가져와서 인덱스 구성
-  for(var i=0; i<cats.length; i++) {
-    try {
-      var res = await fetch('/api/subpages/' + cats[i].id);
-      var subs = await res.json();
-      subs.forEach(function(sub) {
-        allPages.push({catTitle: cats[i].title, catId: cats[i].id, subTitle: sub.title, subId: sub.id});
-      });
-      // 하위가 없으면 카테고리 자체를 직접 열 수 있게
-      if(subs.length === 0) {
-        allPages.push({catTitle: cats[i].title, catId: cats[i].id, subTitle: null, subId: null, direct: true});
-      }
-    } catch(e) {}
-  }
+async function buildIndex(){
+  try{
+    var r=await fetch('/api/all-articles');
+    allArticles=await r.json();
+    // 카테고리 타이틀 매핑
+    var catMap={};
+    allCats.forEach(function(c){catMap[c.id]=c.title;});
+    allArticles.forEach(function(a){
+      a.catTitle=a.parentIds.map(function(id){return catMap[id]||'';}).filter(Boolean).join(', ');
+      a.catId=a.parentIds[0]||'';
+    });
+  }catch(e){}
 }
 
-// 카테고리 열기
-async function openCategory(catId, catTitle) {
-  currentCat = {id: catId, title: catTitle};
-  currentSub = null;
-
-  document.getElementById('homeView').style.display = 'none';
-  document.getElementById('detailView').className = 'detail-view show';
-
-  setBreadcrumb([{label: '홈', fn: 'goHome()'}, {label: catTitle}]);
-  document.getElementById('sidebarHead').textContent = catTitle;
-  document.getElementById('subList').innerHTML = '<div class="loading"><span class="spinner"></span></div>';
-  document.getElementById('contentArea').innerHTML = '<div class="content-placeholder"><div class="ph-icon">👈</div><div>항목을 선택해 주세요</div></div>';
-
-  try {
-    var res = await fetch('/api/subpages/' + catId);
-    var subs = await res.json();
-
-    if(subs.length === 0) {
-      // 하위 페이지 없으면 카테고리 자체 내용 바로 표시
-      document.getElementById('subList').innerHTML = '<div style="padding:.8rem 1rem;font-size:13px;color:#9aa0b4">세부 항목 없음</div>';
-      loadContent(catId, catTitle, true);
+async function openCat(catId, catTitle){
+  currentCat={id:catId,title:catTitle};
+  document.getElementById('homeView').style.display='none';
+  document.getElementById('detailView').className='detail show';
+  setBc([{label:'홈',fn:'goHome()'},{label:catTitle}]);
+  document.getElementById('sbHead').textContent=catTitle;
+  document.getElementById('sbList').innerHTML='<div class="loading"><span class="spin"></span></div>';
+  document.getElementById('contentArea').innerHTML='<div class="c-placeholder"><div class="c-ph-icon">👈</div><div>항목을 선택해 주세요</div></div>';
+  try{
+    var r=await fetch('/api/articles/'+catId);
+    var articles=await r.json();
+    if(!articles.length){
+      document.getElementById('sbList').innerHTML='<div style="padding:.8rem 1rem;font-size:13px;color:#9aa0b4">항목 없음</div>';
+      loadPage(catId, catTitle);
     } else {
-      document.getElementById('subList').innerHTML = subs.map(function(sub) {
-        return '<div class="sub-item" id="sub-' + sub.id + '" onclick="openSub(\'' + sub.id + '\',\'' + escHtml(sub.title) + '\')">' + escHtml(sub.title) + '</div>';
+      document.getElementById('sbList').innerHTML=articles.map(function(a){
+        return '<div class="sb-item" id="sb-'+a.id+'" onclick="openArticle(\''+a.id+'\',\''+esc(a.title)+'\')">'+esc(a.title)+'</div>';
       }).join('');
     }
-  } catch(e) {
-    document.getElementById('subList').innerHTML = '<div style="padding:.8rem 1rem;font-size:13px;color:#e24b4a">불러오기 실패</div>';
+  }catch(e){
+    document.getElementById('sbList').innerHTML='<div style="padding:.8rem 1rem;font-size:13px;color:#e24b4a">불러오기 실패</div>';
   }
 }
 
-// 세부 항목 열기
-function openSub(subId, subTitle) {
-  currentSub = {id: subId, title: subTitle};
-  document.querySelectorAll('.sub-item').forEach(function(el) { el.classList.remove('active'); });
-  var el = document.getElementById('sub-' + subId);
-  if(el) el.classList.add('active');
-  setBreadcrumb([{label:'홈',fn:'goHome()'},{label:currentCat.title,fn:'openCategory("'+currentCat.id+'","'+escHtml(currentCat.title)+'")'},{label:subTitle}]);
-  loadContent(subId, subTitle, false);
+function openArticle(id, title){
+  document.querySelectorAll('.sb-item').forEach(function(el){el.classList.remove('active');});
+  var el=document.getElementById('sb-'+id);
+  if(el)el.classList.add('active');
+  setBc([{label:'홈',fn:'goHome()'},{label:currentCat.title,fn:'openCat("'+currentCat.id+'","'+esc(currentCat.title)+'")'},{label:title}]);
+  loadPage(id, title);
 }
 
-// 페이지 내용 로드
-async function loadContent(pageId, title, isCategory) {
-  var area = document.getElementById('contentArea');
-  area.innerHTML = '<div class="loading"><span class="spinner"></span>불러오는 중...</div>';
-  try {
-    var res = await fetch('/api/page/' + pageId);
-    var data = await res.json();
-    var displayTitle = data.title || title;
-    var bodyHtml = renderBlocks(data.blocks || []);
-    area.innerHTML = '<div class="content-header"><h2>' + escHtml(displayTitle) + '</h2></div>' +
-      '<div class="content-body">' + (bodyHtml || '<p style="color:#9aa0b4;font-size:14px">내용이 없습니다.</p>') + '</div>';
-  } catch(e) {
-    area.innerHTML = '<div class="content-placeholder"><div class="ph-icon">⚠️</div><div>내용을 불러오지 못했습니다</div></div>';
+async function loadPage(pageId, title){
+  var area=document.getElementById('contentArea');
+  area.innerHTML='<div class="loading"><span class="spin"></span>불러오는 중...</div>';
+  try{
+    var r=await fetch('/api/page/'+pageId);
+    var data=await r.json();
+    var t=data.title||title;
+    var body=renderBlocks(data.blocks||[]);
+    area.innerHTML='<div class="c-head"><h2>'+esc(t)+'</h2></div>'+
+      '<div class="c-body">'+(body||'<p style="color:#9aa0b4;font-size:14px">내용이 없습니다.</p>')+'</div>';
+  }catch(e){
+    area.innerHTML='<div class="c-placeholder"><div class="c-ph-icon">⚠️</div><div>불러오기 실패</div></div>';
   }
 }
 
-// 노션 블록 → HTML 변환
-function renderBlocks(blocks) {
-  var html = '';
-  var i = 0;
-  while(i < blocks.length) {
-    var b = blocks[i];
-    var type = b.type;
+function goHome(){
+  document.getElementById('homeView').style.display='block';
+  document.getElementById('detailView').className='detail';
+  currentCat=null;
+}
 
-    if(type === 'bulleted_list_item') {
-      html += '<ul class="notion-bulleted-list">';
-      while(i < blocks.length && blocks[i].type === 'bulleted_list_item') {
-        html += '<li>' + richText(blocks[i].bulleted_list_item.rich_text);
-        if(blocks[i].children) html += renderBlocks(blocks[i].children);
-        html += '</li>';
-        i++;
-      }
-      html += '</ul>';
-      continue;
-    }
-    if(type === 'numbered_list_item') {
-      html += '<ol class="notion-numbered-list">';
-      while(i < blocks.length && blocks[i].type === 'numbered_list_item') {
-        html += '<li>' + richText(blocks[i].numbered_list_item.rich_text);
-        if(blocks[i].children) html += renderBlocks(blocks[i].children);
-        html += '</li>';
-        i++;
-      }
-      html += '</ol>';
-      continue;
-    }
+function setBc(items){
+  document.getElementById('bc').innerHTML=items.map(function(item,i){
+    if(i===items.length-1) return '<span class="bc-cur">'+esc(item.label)+'</span>';
+    return '<span class="bc-link" onclick="'+item.fn+'">'+esc(item.label)+'</span><span class="bc-sep">›</span>';
+  }).join('');
+}
 
-    switch(type) {
+// 검색
+function getHits(q){
+  if(!q)return[];
+  q=q.toLowerCase();
+  return allArticles.filter(function(a){
+    return (a.title&&a.title.toLowerCase().indexOf(q)>-1)||(a.catTitle&&a.catTitle.toLowerCase().indexOf(q)>-1);
+  });
+}
+
+function showDrop(dropEl, hits, q){
+  if(!q){dropEl.className=dropEl.className.replace(/\s?show/,'');return;}
+  if(!hits.length){
+    dropEl.innerHTML='<div class="sd-none">검색 결과 없음</div>';
+  } else {
+    dropEl.innerHTML=hits.slice(0,8).map(function(h,i){
+      return '<div class="sd-item" data-i="'+i+'">'+esc(h.title)+'<div class="sd-sub">📂 '+esc(h.catTitle)+'</div></div>';
+    }).join('');
+    dropEl.querySelectorAll('.sd-item').forEach(function(el,i){
+      el.onclick=function(){
+        dropEl.className=dropEl.className.replace(/\s?show/,'');
+        document.getElementById('hmsi').value='';
+        document.getElementById('hsi').value='';
+        var hit=hits[i];
+        openCat(hit.catId, hit.catTitle);
+        setTimeout(function(){openArticle(hit.id,hit.title);},450);
+      };
+    });
+  }
+  if(dropEl.className.indexOf('show')===-1) dropEl.className+=' show';
+}
+
+var t1=null,t2=null;
+document.getElementById('hmsi').addEventListener('input',function(){
+  clearTimeout(t1);var q=this.value.trim();
+  t1=setTimeout(function(){showDrop(document.getElementById('hmsd'),getHits(q),q);},200);
+});
+document.getElementById('hsi').addEventListener('input',function(){
+  clearTimeout(t2);var q=this.value.trim();
+  t2=setTimeout(function(){showDrop(document.getElementById('hsd'),getHits(q),q);},200);
+});
+document.addEventListener('click',function(e){
+  if(!e.target.closest('.home-search')) document.getElementById('hmsd').className='home-sdrop';
+  if(!e.target.closest('.h-search')) document.getElementById('hsd').className='sdrop';
+});
+
+// 노션 블록 렌더링
+function renderBlocks(blocks){
+  var html='',i=0;
+  while(i<blocks.length){
+    var b=blocks[i],type=b.type;
+    if(type==='bulleted_list_item'){
+      html+='<ul class="nb-ul">';
+      while(i<blocks.length&&blocks[i].type==='bulleted_list_item'){
+        html+='<li>'+rt(blocks[i].bulleted_list_item.rich_text)+(blocks[i].children?renderBlocks(blocks[i].children):'')+'</li>';i++;
+      }
+      html+='</ul>';continue;
+    }
+    if(type==='numbered_list_item'){
+      html+='<ol class="nb-ol">';
+      while(i<blocks.length&&blocks[i].type==='numbered_list_item'){
+        html+='<li>'+rt(blocks[i].numbered_list_item.rich_text)+(blocks[i].children?renderBlocks(blocks[i].children):'')+'</li>';i++;
+      }
+      html+='</ol>';continue;
+    }
+    switch(type){
       case 'paragraph':
-        var text = richText(b.paragraph.rich_text);
-        html += '<p class="notion-paragraph">' + (text || '&nbsp;') + '</p>';
-        if(b.children) html += '<div style="padding-left:1.2rem">' + renderBlocks(b.children) + '</div>';
+        var tx=rt(b.paragraph.rich_text);
+        html+='<p class="nb-p">'+(tx||'&nbsp;')+'</p>';
+        if(b.children)html+='<div style="padding-left:1.2rem">'+renderBlocks(b.children)+'</div>';
         break;
-      case 'heading_1':
-        html += '<h2 class="notion-heading-1">' + richText(b.heading_1.rich_text) + '</h2>';
-        break;
-      case 'heading_2':
-        html += '<h3 class="notion-heading-2">' + richText(b.heading_2.rich_text) + '</h3>';
-        break;
-      case 'heading_3':
-        html += '<h4 class="notion-heading-3">' + richText(b.heading_3.rich_text) + '</h4>';
-        break;
+      case 'heading_1':html+='<h2 class="nb-h1">'+rt(b.heading_1.rich_text)+'</h2>';break;
+      case 'heading_2':html+='<h3 class="nb-h2">'+rt(b.heading_2.rich_text)+'</h3>';break;
+      case 'heading_3':html+='<h4 class="nb-h3">'+rt(b.heading_3.rich_text)+'</h4>';break;
       case 'image':
-        var src = '';
-        if(b.image.type === 'external') src = b.image.external.url;
-        else if(b.image.type === 'file') src = '/api/image?url=' + encodeURIComponent(b.image.file.url);
-        var cap = b.image.caption ? richText(b.image.caption) : '';
-        html += '<div class="notion-image"><img src="' + src + '" alt="' + (cap || '이미지') + '" loading="lazy">' + (cap ? '<div class="caption">' + cap + '</div>' : '') + '</div>';
+        var src=b.image.type==='external'?b.image.external.url:'/api/image?url='+encodeURIComponent(b.image.file.url);
+        var cap=b.image.caption?rt(b.image.caption):'';
+        html+='<div class="nb-img"><img src="'+src+'" alt="이미지" loading="lazy">'+(cap?'<div class="cap">'+cap+'</div>':'')+'</div>';
         break;
       case 'callout':
-        var icon = (b.callout.icon && b.callout.icon.emoji) ? b.callout.icon.emoji : 'ℹ️';
-        html += '<div class="notion-callout"><span class="icon">' + icon + '</span><div>' + richText(b.callout.rich_text) + (b.children ? renderBlocks(b.children) : '') + '</div></div>';
+        var ico=(b.callout.icon&&b.callout.icon.emoji)?b.callout.icon.emoji:'ℹ️';
+        html+='<div class="nb-callout"><span class="ico">'+ico+'</span><div>'+rt(b.callout.rich_text)+(b.children?renderBlocks(b.children):'')+'</div></div>';
         break;
-      case 'quote':
-        html += '<blockquote class="notion-quote">' + richText(b.quote.rich_text) + '</blockquote>';
-        break;
-      case 'code':
-        html += '<pre class="notion-code"><code>' + escHtml(b.code.rich_text.map(function(t){return t.plain_text;}).join('')) + '</code></pre>';
-        break;
-      case 'divider':
-        html += '<hr class="notion-divider">';
-        break;
-      case 'toggle':
-        html += '<details class="notion-toggle"><summary>' + richText(b.toggle.rich_text) + '</summary><div class="notion-toggle-content">' + (b.children ? renderBlocks(b.children) : '') + '</div></details>';
-        break;
-      case 'to_do':
-        html += '<div class="notion-todo"><input type="checkbox"' + (b.to_do.checked ? ' checked' : '') + ' disabled><span>' + richText(b.to_do.rich_text) + '</span></div>';
-        break;
-      case 'child_page':
-        html += '<div class="notion-child-page" onclick="openSubById(\'' + b.id + '\',\'' + escHtml(b.child_page.title) + '\')">' + '📄 ' + escHtml(b.child_page.title) + '</div>';
-        break;
-      case 'table':
-        if(b.children) html += renderTable(b);
-        break;
+      case 'quote':html+='<blockquote class="nb-quote">'+rt(b.quote.rich_text)+'</blockquote>';break;
+      case 'code':html+='<pre class="nb-code"><code>'+esc(b.code.rich_text.map(function(t){return t.plain_text;}).join(''))+'</code></pre>';break;
+      case 'divider':html+='<hr class="nb-hr">';break;
+      case 'toggle':html+='<details class="nb-toggle"><summary>'+rt(b.toggle.rich_text)+'</summary><div class="nb-toggle-body">'+(b.children?renderBlocks(b.children):'')+'</div></details>';break;
+      case 'to_do':html+='<div class="nb-todo"><input type="checkbox"'+(b.to_do.checked?' checked':'')+' disabled><span>'+rt(b.to_do.rich_text)+'</span></div>';break;
+      case 'table':if(b.children)html+=renderTable(b);break;
       case 'column_list':
-        if(b.children) {
-          html += '<div style="display:grid;grid-template-columns:repeat(' + b.children.length + ',1fr);gap:12px;margin:.8rem 0">';
-          b.children.forEach(function(col) {
-            html += '<div>' + (col.children ? renderBlocks(col.children) : '') + '</div>';
-          });
-          html += '</div>';
+        if(b.children){
+          html+='<div style="display:grid;grid-template-columns:repeat('+b.children.length+',1fr);gap:12px;margin:.8rem 0">';
+          b.children.forEach(function(col){html+='<div>'+(col.children?renderBlocks(col.children):'')+'</div>';});
+          html+='</div>';
         }
         break;
       case 'bookmark':
-        var burl = b.bookmark.url;
-        html += '<a href="' + burl + '" target="_blank" class="rich-link" style="font-size:14px;display:block;margin:.4rem 0">' + burl + '</a>';
+        html+='<a href="'+b.bookmark.url+'" target="_blank" class="r-link" style="font-size:14px;display:block;margin:.5rem 0;word-break:break-all">🔗 '+b.bookmark.url+'</a>';
         break;
-      case 'video':
-        var vurl = b.video && (b.video.external ? b.video.external.url : '');
-        if(vurl) html += '<p class="notion-paragraph"><a href="' + vurl + '" target="_blank" class="rich-link">▶ 동영상 보기</a></p>';
-        break;
-      default:
+      case 'child_page':
+        html+='<div style="padding:.5rem .8rem;margin:.3rem 0;background:#f6f7fb;border:1px solid #e8eaf0;border-radius:8px;font-size:14px;color:#1a56db;cursor:pointer" onclick="openArticle(\''+b.id+'\',\''+esc(b.child_page.title)+'\')">📄 '+esc(b.child_page.title)+'</div>';
         break;
     }
     i++;
@@ -376,111 +358,40 @@ function renderBlocks(blocks) {
   return html;
 }
 
-function renderTable(block) {
-  var rows = block.children || [];
-  var html = '<table class="notion-table"><tbody>';
-  rows.forEach(function(row, ri) {
-    html += '<tr>';
-    var cells = row.table_row ? row.table_row.cells : [];
-    cells.forEach(function(cell) {
-      var tag = (ri === 0 && block.table.has_column_header) ? 'th' : 'td';
-      html += '<' + tag + '>' + richText(cell) + '</' + tag + '>';
+function renderTable(block){
+  var rows=block.children||[];
+  var html='<div style="overflow-x:auto"><table class="nb-table"><tbody>';
+  rows.forEach(function(row,ri){
+    html+='<tr>';
+    var cells=row.table_row?row.table_row.cells:[];
+    cells.forEach(function(cell){
+      var tag=(ri===0&&block.table.has_column_header)?'th':'td';
+      html+='<'+tag+'>'+rt(cell)+'</'+tag+'>';
     });
-    html += '</tr>';
+    html+='</tr>';
   });
-  html += '</tbody></table>';
+  html+='</tbody></table></div>';
   return html;
 }
 
-// richText 배열 → HTML
-function richText(arr) {
-  if(!arr || !arr.length) return '';
-  return arr.map(function(t) {
-    var text = escHtml(t.plain_text || '').replace(/\n/g, '<br>');
-    var ann = t.annotations || {};
-    if(ann.bold) text = '<strong class="rich-bold">' + text + '</strong>';
-    if(ann.italic) text = '<em class="rich-italic">' + text + '</em>';
-    if(ann.underline) text = '<span class="rich-underline">' + text + '</span>';
-    if(ann.strikethrough) text = '<span class="rich-strike">' + text + '</span>';
-    if(ann.code) text = '<code class="rich-code">' + text + '</code>';
-    if(t.href) text = '<a href="' + t.href + '" target="_blank" class="rich-link">' + text + '</a>';
-    if(ann.color && ann.color !== 'default') {
-      var colorMap = {red:'#e24b4a',blue:'#1a56db',green:'#3b6d11',yellow:'#ba7517',orange:'#d85a30',purple:'#534ab7',pink:'#d4537e',gray:'#6b7280',
-        red_background:'background:#fcebeb',blue_background:'background:#e6f1fb',green_background:'background:#eaf3de',yellow_background:'background:#faeeda',
-        orange_background:'background:#faece7',purple_background:'background:#eeedfe',pink_background:'background:#fbeaf0',gray_background:'background:#f1efe8'};
-      var style = colorMap[ann.color];
-      if(style) {
-        if(style.startsWith('background')) text = '<span style="' + style + ';padding:1px 4px;border-radius:3px">' + text + '</span>';
-        else text = '<span style="color:' + style + '">' + text + '</span>';
-      }
-    }
+function rt(arr){
+  if(!arr||!arr.length)return'';
+  return arr.map(function(t){
+    var text=esc(t.plain_text||'').replace(/\n/g,'<br>');
+    var a=t.annotations||{};
+    if(a.bold)text='<strong class="r-bold">'+text+'</strong>';
+    if(a.italic)text='<em class="r-italic">'+text+'</em>';
+    if(a.underline)text='<span class="r-under">'+text+'</span>';
+    if(a.strikethrough)text='<span class="r-strike">'+text+'</span>';
+    if(a.code)text='<code class="r-code">'+text+'</code>';
+    if(t.href)text='<a href="'+t.href+'" target="_blank" class="r-link">'+text+'</a>';
     return text;
   }).join('');
 }
 
-function escHtml(str) {
-  return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+function esc(s){
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
-
-function setBreadcrumb(items) {
-  document.getElementById('breadcrumb').innerHTML = items.map(function(item, i) {
-    if(i === items.length - 1) return '<span class="current">' + escHtml(item.label) + '</span>';
-    return '<span onclick="' + item.fn + '">' + escHtml(item.label) + '</span><span class="sep">›</span>';
-  }).join('');
-}
-
-function goHome() {
-  document.getElementById('homeView').style.display = 'block';
-  document.getElementById('detailView').className = 'detail-view';
-  currentCat = null; currentSub = null;
-}
-
-function openSubById(id, title) {
-  openSub(id, title);
-}
-
-// 검색
-var searchTimer = null;
-document.getElementById('searchInput').addEventListener('input', function() {
-  clearTimeout(searchTimer);
-  var q = this.value.trim();
-  searchTimer = setTimeout(function() { doSearch(q); }, 200);
-});
-
-function doSearch(q) {
-  var drop = document.getElementById('searchDrop');
-  if(!q) { drop.className = 'search-drop'; return; }
-  var hits = allPages.filter(function(p) {
-    return (p.catTitle && p.catTitle.indexOf(q) > -1) ||
-           (p.subTitle && p.subTitle.indexOf(q) > -1);
-  });
-  if(!hits.length) {
-    drop.innerHTML = '<div class="sd-none">검색 결과 없음</div>';
-    drop.className = 'search-drop show'; return;
-  }
-  drop.innerHTML = hits.slice(0,8).map(function(h, i) {
-    return '<div class="sd-item" data-i="' + i + '">' +
-      escHtml(h.subTitle || h.catTitle) +
-      '<div class="sd-cat">📂 ' + escHtml(h.catTitle) + '</div>' +
-      '</div>';
-  }).join('');
-  drop.className = 'search-drop show';
-  drop.querySelectorAll('.sd-item').forEach(function(el, i) {
-    el.onclick = function() {
-      drop.className = 'search-drop';
-      document.getElementById('searchInput').value = '';
-      var hit = hits[i];
-      openCategory(hit.catId, hit.catTitle);
-      if(hit.subId) setTimeout(function() { openSub(hit.subId, hit.subTitle); }, 400);
-    };
-  });
-}
-
-document.addEventListener('click', function(e) {
-  if(!e.target.closest('.search-wrap')) {
-    document.getElementById('searchDrop').className = 'search-drop';
-  }
-});
 
 loadCategories();
 </script>
