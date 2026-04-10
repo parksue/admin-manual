@@ -34,7 +34,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .home-sdrop{display:none;position:absolute;top:calc(100%+8px);left:0;right:0;background:#fff;border:1px solid #e2e5ef;border-radius:14px;box-shadow:0 8px 28px rgba(0,0,0,.1);z-index:300;overflow:hidden}
 .home-sdrop.show{display:block}
 .sec-label{font-size:11px;font-weight:700;color:#b0b5c4;letter-spacing:.08em;text-transform:uppercase;margin-bottom:.9rem}
-.cat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
+.cat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
 .cat-card{background:#fff;border:1.5px solid #e8eaf0;border-radius:16px;padding:1.3rem 1.1rem;cursor:pointer;transition:border-color .15s,box-shadow .15s,transform .12s}
 .cat-card:hover{border-color:#93a5fb;box-shadow:0 6px 20px rgba(26,86,219,.11);transform:translateY(-2px)}
 .cat-icon{font-size:30px;margin-bottom:10px;line-height:1}
@@ -185,8 +185,8 @@ async function buildIndex(){
     var catMap={};
     allCats.forEach(function(c){catMap[c.id]=c.title;});
     allArticles.forEach(function(a){
-      a.catTitle=a.parentIds.map(function(id){return catMap[id]||'';}).filter(Boolean).join(', ');
-      a.catId=a.parentIds[0]||'';
+      a.catTitle=a.parentName||'';
+      a.catId='';
     });
   }catch(e){}
 }
