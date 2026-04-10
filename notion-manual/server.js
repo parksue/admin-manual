@@ -21,7 +21,6 @@ function notionHeaders() {
   };
 }
 
-// DB 전체 쿼리 (Publish = true 인 것만)
 async function queryDB() {
   const response = await fetch(
     `https://api.notion.com/v1/databases/${DB_ID}/query`,
@@ -49,18 +48,18 @@ function getDescription(page) {
   const t = page.properties?.Description?.rich_text;
   return t ? t.map(x => x.plain_text).join('') : '';
 }
-function getParentIds(page) {
-  // KB Parent relation → 상위 페이지 ID 배열
-  const rel = page.properties?.['KB Parent']?.relation || [];
-  return rel.map(r => r.id);
+function getParentName(page) {
+  // KB Parent = 텍스트 타입, 상위 카테고리 이름 직접 입력
+  const t = page.properties?.['KB Parent']?.rich_text;
+  return t ? t.map(x => x.plain_text).join('').trim() : '';
 }
 
-// 카테고리 목록 API
+// 카테고리 목록 (KB Parent 비어있는 kb:category)
 app.get('/api/categories', async (req, res) => {
   try {
     const pages = await queryDB();
     const categories = pages
-      .filter(p => getPageType(p) === 'kb:category' && getParentIds(p).length === 0)
+      .filter(p => getPageType(p) === 'kb:category' && !getParentName(p))
       .map(p => ({
         id: p.id,
         title: getTitle(p),
@@ -73,16 +72,17 @@ app.get('/api/categories', async (req, res) => {
   }
 });
 
-// 특정 카테고리의 하위 article 목록
-app.get('/api/articles/:categoryId', async (req, res) => {
+// 특정 카테고리의 하위 article (KB Parent 텍스트가 카테고리 이름과 일치)
+app.get('/api/articles/:categoryTitle', async (req, res) => {
   try {
     const pages = await queryDB();
+    const catTitle = decodeURIComponent(req.params.categoryTitle);
     const articles = pages
       .filter(p => {
         const type = getPageType(p);
-        const parents = getParentIds(p);
+        const parent = getParentName(p);
         return (type === 'kb:article' || type === 'kb:sub-category') &&
-               parents.includes(req.params.categoryId);
+               parent === catTitle;
       })
       .map(p => ({
         id: p.id,
@@ -95,7 +95,7 @@ app.get('/api/articles/:categoryId', async (req, res) => {
   }
 });
 
-// 검색용 - 전체 article 목록
+// 검색용 전체 article
 app.get('/api/all-articles', async (req, res) => {
   try {
     const pages = await queryDB();
@@ -104,7 +104,7 @@ app.get('/api/all-articles', async (req, res) => {
       .map(p => ({
         id: p.id,
         title: getTitle(p),
-        parentIds: getParentIds(p),
+        parentName: getParentName(p),
       }));
     res.json(all);
   } catch (e) {
@@ -112,7 +112,7 @@ app.get('/api/all-articles', async (req, res) => {
   }
 });
 
-// 페이지 내용 (블록 재귀)
+// 페이지 내용
 async function fetchBlocks(blockId) {
   const response = await fetch(
     `https://api.notion.com/v1/blocks/${blockId}/children?page_size=100`,
@@ -145,7 +145,7 @@ app.get('/api/page/:pageId', async (req, res) => {
   }
 });
 
-// 노션 이미지 프록시
+// 이미지 프록시
 app.get('/api/image', async (req, res) => {
   try {
     const url = decodeURIComponent(req.query.url);
