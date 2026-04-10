@@ -149,9 +149,25 @@ app.get('/api/page/:pageId', async (req, res) => {
 app.get('/api/image', async (req, res) => {
   try {
     const url = decodeURIComponent(req.query.url);
-    const imgRes = await fetch(url);
+    const blockId = req.query.blockId;
+
+    let imageUrl = url;
+    if (blockId) {
+      try {
+        const blockRes = await fetch(
+          `https://api.notion.com/v1/blocks/${blockId}`,
+          { headers: notionHeaders() }
+        );
+        const block = await blockRes.json();
+        if (block.image?.file?.url) imageUrl = block.image.file.url;
+        else if (block.image?.external?.url) imageUrl = block.image.external.url;
+      } catch (e) {}
+    }
+
+    const imgRes = await fetch(imageUrl);
+    if (!imgRes.ok) throw new Error('Image fetch failed: ' + imgRes.status);
     res.set('Content-Type', imgRes.headers.get('content-type') || 'image/jpeg');
-    res.set('Cache-Control', 'public, max-age=3600');
+    res.set('Cache-Control', 'public, max-age=1800');
     imgRes.body.pipe(res);
   } catch (e) {
     res.status(500).json({ error: e.message });
