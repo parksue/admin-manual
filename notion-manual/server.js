@@ -27,7 +27,7 @@ async function queryDB() {
     {
       method: 'POST',
       headers: notionHeaders(),
-      body: JSON.stringify({ page_size: 100 }) // Publish 필터 일단 제거
+      body: JSON.stringify({ page_size: 100, sorts: [{ property: "Sort", direction: "ascending" }] }) // Publish 필터 일단 제거
     }
   );
   const data = await response.json();
