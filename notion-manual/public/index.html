@@ -200,7 +200,7 @@ async function openCat(catId, catTitle){
   document.getElementById('sbList').innerHTML='<div class="loading"><span class="spin"></span></div>';
   document.getElementById('contentArea').innerHTML='<div class="c-placeholder"><div class="c-ph-icon">👈</div><div>항목을 선택해 주세요</div></div>';
   try{
-    var r=await fetch('/api/articles/'+catId);
+    var r=await fetch('/api/articles/'+encodeURIComponent(catTitle));
     var articles=await r.json();
     if(!articles.length){
       document.getElementById('sbList').innerHTML='<div style="padding:.8rem 1rem;font-size:13px;color:#9aa0b4">항목 없음</div>';
