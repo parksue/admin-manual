@@ -27,14 +27,11 @@ async function queryDB() {
     {
       method: 'POST',
       headers: notionHeaders(),
-      body: JSON.stringify({
-        filter: { property: 'Publish', checkbox: { equals: true } },
-        page_size: 100,
-      })
+      body: JSON.stringify({ page_size: 100 }) // Publish 필터 일단 제거
     }
   );
   const data = await response.json();
-  return data.results || [];
+  return data;
 }
 
 function getTitle(page) {
@@ -49,15 +46,29 @@ function getDescription(page) {
   return t ? t.map(x => x.plain_text).join('') : '';
 }
 function getParentName(page) {
-  // KB Parent = 텍스트 타입, 상위 카테고리 이름 직접 입력
   const t = page.properties?.['KB Parent']?.rich_text;
   return t ? t.map(x => x.plain_text).join('').trim() : '';
 }
 
-// 카테고리 목록 (KB Parent 비어있는 kb:category)
+// 디버그용 - DB 전체 raw 응답
+app.get('/api/debug', async (req, res) => {
+  try {
+    const data = await queryDB();
+    res.json(data);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// 카테고리 목록
 app.get('/api/categories', async (req, res) => {
   try {
-    const pages = await queryDB();
+    const data = await queryDB();
+    const pages = data.results || [];
+    console.log('전체 페이지 수:', pages.length);
+    pages.forEach(p => {
+      console.log('페이지:', getTitle(p), '| 타입:', getPageType(p), '| 부모:', getParentName(p));
+    });
     const categories = pages
       .filter(p => getPageType(p) === 'kb:category' && !getParentName(p))
       .map(p => ({
@@ -72,47 +83,37 @@ app.get('/api/categories', async (req, res) => {
   }
 });
 
-// 특정 카테고리의 하위 article (KB Parent 텍스트가 카테고리 이름과 일치)
 app.get('/api/articles/:categoryTitle', async (req, res) => {
   try {
-    const pages = await queryDB();
+    const data = await queryDB();
+    const pages = data.results || [];
     const catTitle = decodeURIComponent(req.params.categoryTitle);
     const articles = pages
       .filter(p => {
         const type = getPageType(p);
         const parent = getParentName(p);
-        return (type === 'kb:article' || type === 'kb:sub-category') &&
-               parent === catTitle;
+        return (type === 'kb:article' || type === 'kb:sub-category') && parent === catTitle;
       })
-      .map(p => ({
-        id: p.id,
-        title: getTitle(p),
-        type: getPageType(p),
-      }));
+      .map(p => ({ id: p.id, title: getTitle(p), type: getPageType(p) }));
     res.json(articles);
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
 });
 
-// 검색용 전체 article
 app.get('/api/all-articles', async (req, res) => {
   try {
-    const pages = await queryDB();
+    const data = await queryDB();
+    const pages = data.results || [];
     const all = pages
       .filter(p => getPageType(p) === 'kb:article')
-      .map(p => ({
-        id: p.id,
-        title: getTitle(p),
-        parentName: getParentName(p),
-      }));
+      .map(p => ({ id: p.id, title: getTitle(p), parentName: getParentName(p) }));
     res.json(all);
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
 });
 
-// 페이지 내용
 async function fetchBlocks(blockId) {
   const response = await fetch(
     `https://api.notion.com/v1/blocks/${blockId}/children?page_size=100`,
@@ -145,7 +146,6 @@ app.get('/api/page/:pageId', async (req, res) => {
   }
 });
 
-// 이미지 프록시
 app.get('/api/image', async (req, res) => {
   try {
     const url = decodeURIComponent(req.query.url);
