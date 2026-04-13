@@ -10,7 +10,7 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 const NOTION_TOKEN = process.env.NOTION_TOKEN;
-const DB_ID = process.env.CATEGORY_DB_ID || '33e008a1606380c0944ef8f9c21319b0';
+const DB_ID = process.env.CATEGORY_DB_ID;
 const NOTION_VERSION = '2022-06-28';
 
 function notionHeaders() {
@@ -21,171 +21,117 @@ function notionHeaders() {
   };
 }
 
-let dbCache = null;
-let dbCacheTime = 0;
-const CACHE_TTL = 60 * 1000; // 1분 캐시
+// ─── 캐시 ───────────────────────────────────────────
+let cache = { categories: null, articles: {}, allArticles: null, time: 0 };
+const TTL = 5 * 60 * 1000; // 5분
 
-async function queryDB() {
-  const now = Date.now();
-  if (dbCache && (now - dbCacheTime) < CACHE_TTL) return dbCache;
-  const response = await fetch(
-    `https://api.notion.com/v1/databases/${DB_ID}/query`,
-    {
-      method: 'POST',
-      headers: notionHeaders(),
-      body: JSON.stringify({
-        page_size: 100,
-        sorts: [{ property: 'Sort', direction: 'ascending' }]
-      })
-    }
-  );
-  dbCache = await response.json();
-  dbCacheTime = now;
-  return dbCache;
-}
+async function getDB() {
+  if (cache.categories && Date.now() - cache.time < TTL) return;
+  const res = await fetch(`https://api.notion.com/v1/databases/${DB_ID}/query`, {
+    method: 'POST',
+    headers: notionHeaders(),
+    body: JSON.stringify({ page_size: 100, sorts: [{ property: 'Sort', direction: 'ascending' }] })
+  });
+  const data = await res.json();
+  const pages = data.results || [];
 
-function getTitle(page) {
-  const t = page.properties?.Name?.title;
-  return t ? t.map(x => x.plain_text).join('') : '제목 없음';
-}
-function getPageType(page) {
-  return page.properties?.['Page Type']?.select?.name || '';
-}
-function getDescription(page) {
-  const t = page.properties?.Description?.rich_text;
-  return t ? t.map(x => x.plain_text).join('') : '';
-}
-function getParentName(page) {
-  const t = page.properties?.['KB Parent']?.rich_text;
-  return t ? t.map(x => x.plain_text).join('').trim() : '';
+  const getTitle = p => (p.properties?.Name?.title || []).map(x => x.plain_text).join('') || '제목 없음';
+  const getType  = p => p.properties?.['Page Type']?.select?.name || '';
+  const getDesc  = p => (p.properties?.Description?.rich_text || []).map(x => x.plain_text).join('');
+  const getParent= p => (p.properties?.['KB Parent']?.rich_text || []).map(x => x.plain_text).join('').trim();
+
+  cache.categories = pages
+    .filter(p => getType(p) === 'kb:category' && !getParent(p))
+    .map(p => ({ id: p.id, title: getTitle(p), desc: getDesc(p), icon: p.icon?.emoji || '📄' }));
+
+  cache.articles = {};
+  cache.allArticles = [];
+  pages.filter(p => ['kb:article','kb:sub-category'].includes(getType(p))).forEach(p => {
+    const parent = getParent(p);
+    const item = { id: p.id, title: getTitle(p), type: getType(p), parentName: parent };
+    if (!cache.articles[parent]) cache.articles[parent] = [];
+    cache.articles[parent].push(item);
+    cache.allArticles.push(item);
+  });
+
+  cache.time = Date.now();
 }
 
-// 카테고리 목록
+// 서버 시작 시 미리 로드
+getDB().catch(() => {});
+// 4분마다 갱신
+setInterval(() => getDB().catch(() => {}), 4 * 60 * 1000);
+
+// ─── API ─────────────────────────────────────────────
 app.get('/api/categories', async (req, res) => {
-  try {
-    const data = await queryDB();
-    const pages = data.results || [];
-    const categories = pages
-      .filter(p => getPageType(p) === 'kb:category' && !getParentName(p))
-      .map(p => ({
-        id: p.id,
-        title: getTitle(p),
-        desc: getDescription(p),
-        icon: p.icon?.emoji || '📄',
-      }));
-    res.json(categories);
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
+  try { await getDB(); res.json(cache.categories || []); }
+  catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// 카테고리의 article 목록 (하위 페이지 포함 안함 - 빠른 로드)
-app.get('/api/articles/:categoryTitle', async (req, res) => {
+app.get('/api/articles/:cat', async (req, res) => {
   try {
-    const data = await queryDB();
-    const pages = data.results || [];
-    const catTitle = decodeURIComponent(req.params.categoryTitle);
-    const articles = pages
-      .filter(p => {
-        const type = getPageType(p);
-        const parent = getParentName(p);
-        return (type === 'kb:article' || type === 'kb:sub-category') && parent === catTitle;
-      })
-      .map(p => ({ id: p.id, title: getTitle(p), type: getPageType(p) }));
-    res.json(articles);
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
+    await getDB();
+    res.json(cache.articles[decodeURIComponent(req.params.cat)] || []);
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// 특정 페이지의 직속 하위 페이지만 (lazy load용)
+app.get('/api/all-articles', async (req, res) => {
+  try { await getDB(); res.json(cache.allArticles || []); }
+  catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// 하위 페이지 lazy load
 app.get('/api/children/:pageId', async (req, res) => {
   try {
-    const response = await fetch(
-      `https://api.notion.com/v1/blocks/${req.params.pageId}/children?page_size=100`,
-      { headers: notionHeaders() }
-    );
-    const data = await response.json();
-    if (!data.results) return res.json([]);
-    const children = data.results
-      .filter(b => b.type === 'child_page')
-      .map(b => ({ id: b.id, title: b.child_page.title }));
+    const r = await fetch(`https://api.notion.com/v1/blocks/${req.params.pageId}/children?page_size=100`, { headers: notionHeaders() });
+    const data = await r.json();
+    const children = (data.results || []).filter(b => b.type === 'child_page').map(b => ({ id: b.id, title: b.child_page.title }));
     res.json(children);
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
-});
-
-// 검색용
-app.get('/api/all-articles', async (req, res) => {
-  try {
-    const data = await queryDB();
-    const pages = data.results || [];
-    const all = pages
-      .filter(p => getPageType(p) === 'kb:article')
-      .map(p => ({ id: p.id, title: getTitle(p), parentName: getParentName(p) }));
-    res.json(all);
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 // 페이지 내용
-async function fetchBlocks(blockId) {
-  const response = await fetch(
-    `https://api.notion.com/v1/blocks/${blockId}/children?page_size=100`,
-    { headers: notionHeaders() }
-  );
-  const data = await response.json();
+async function fetchBlocks(id) {
+  const r = await fetch(`https://api.notion.com/v1/blocks/${id}/children?page_size=100`, { headers: notionHeaders() });
+  const data = await r.json();
   if (!data.results) return [];
   const blocks = [];
-  for (const block of data.results) {
-    const b = { ...block };
-    if (block.has_children && block.type !== 'child_page') b.children = await fetchBlocks(block.id);
-    blocks.push(b);
+  for (const b of data.results) {
+    const block = { ...b };
+    if (b.has_children && b.type !== 'child_page') block.children = await fetchBlocks(b.id);
+    blocks.push(block);
   }
   return blocks;
 }
 
 app.get('/api/page/:pageId', async (req, res) => {
   try {
-    const metaRes = await fetch(
-      `https://api.notion.com/v1/pages/${req.params.pageId}`,
-      { headers: notionHeaders() }
-    );
+    const [metaRes, blocks] = await Promise.all([
+      fetch(`https://api.notion.com/v1/pages/${req.params.pageId}`, { headers: notionHeaders() }),
+      fetchBlocks(req.params.pageId)
+    ]);
     const meta = await metaRes.json();
-    const blocks = await fetchBlocks(req.params.pageId);
-    const titleProp = meta.properties?.Name?.title || meta.properties?.title?.title;
-    const title = titleProp ? titleProp.map(t => t.plain_text).join('') : '';
-    res.json({ title, blocks });
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
+    const tp = meta.properties?.Name?.title || meta.properties?.title?.title || [];
+    res.json({ title: tp.map(t => t.plain_text).join(''), blocks });
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 // 이미지 프록시
 app.get('/api/image', async (req, res) => {
   try {
-    const url = decodeURIComponent(req.query.url);
     const blockId = req.query.blockId;
-    let imageUrl = url;
+    let url = decodeURIComponent(req.query.url);
     if (blockId) {
-      try {
-        const blockRes = await fetch(`https://api.notion.com/v1/blocks/${blockId}`, { headers: notionHeaders() });
-        const block = await blockRes.json();
-        if (block.image?.file?.url) imageUrl = block.image.file.url;
-        else if (block.image?.external?.url) imageUrl = block.image.external.url;
-      } catch (e) {}
+      const r = await fetch(`https://api.notion.com/v1/blocks/${blockId}`, { headers: notionHeaders() });
+      const b = await r.json();
+      url = b.image?.file?.url || b.image?.external?.url || url;
     }
-    const imgRes = await fetch(imageUrl);
-    if (!imgRes.ok) throw new Error('Image fetch failed');
+    const imgRes = await fetch(url);
     res.set('Content-Type', imgRes.headers.get('content-type') || 'image/jpeg');
     res.set('Cache-Control', 'public, max-age=1800');
     imgRes.body.pipe(res);
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`Server on port ${PORT}`));
