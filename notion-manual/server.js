@@ -21,7 +21,13 @@ function notionHeaders() {
   };
 }
 
+let dbCache = null;
+let dbCacheTime = 0;
+const CACHE_TTL = 60 * 1000; // 1분 캐시
+
 async function queryDB() {
+  const now = Date.now();
+  if (dbCache && (now - dbCacheTime) < CACHE_TTL) return dbCache;
   const response = await fetch(
     `https://api.notion.com/v1/databases/${DB_ID}/query`,
     {
@@ -33,7 +39,9 @@ async function queryDB() {
       })
     }
   );
-  return await response.json();
+  dbCache = await response.json();
+  dbCacheTime = now;
+  return dbCache;
 }
 
 function getTitle(page) {
