@@ -174,7 +174,7 @@ async function loadCategories(){
     var r=await fetch('/api/categories');
     allCats=await r.json();
     renderCats(allCats);
-    buildIndex();
+    buildIndex(); // 백그라운드로 실행 (await 없음)
   }catch(e){
     document.getElementById('catGrid').innerHTML='<div style="color:#e24b4a;font-size:14px">카테고리를 불러오지 못했습니다.</div>';
   }
@@ -196,12 +196,11 @@ async function buildIndex(){
   try{
     var r=await fetch('/api/all-articles');
     allArticles=await r.json();
-    // 카테고리 타이틀 매핑
-    var catMap={};
-    allCats.forEach(function(c){catMap[c.id]=c.title;});
     allArticles.forEach(function(a){
       a.catTitle=a.parentName||'';
-      a.catId='';
+      // catId: allCats에서 title 매칭해서 찾기
+      var cat=allCats.find(function(c){return c.title===a.parentName;});
+      a.catId=cat?cat.id:'';
     });
   }catch(e){}
 }
