@@ -303,17 +303,13 @@ function makeSbNode(id, title, depth, type){
       });
   }
 
-  if(type !== 'kb:sub-category' && type !== 'child_page'){
-    hideArrow();
-  }
-
   arrow.addEventListener('click', toggleChildren);
 
   row.addEventListener('click', function(){
     document.querySelectorAll('.tree-row').forEach(function(node){ node.classList.remove('active'); });
     row.classList.add('active');
     openArticle(id, title);
-    if(type === 'kb:sub-category' || type === 'child_page') toggleChildren();
+    toggleChildren();
   });
 
   row.appendChild(arrow);
