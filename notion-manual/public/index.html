@@ -232,73 +232,70 @@ async function openCat(catId, catTitle){
 function renderSidebar(articles, catTitle){
   var html='';
   articles.forEach(function(a){
-    html+=makeTreeRow(a.id, a.title, 0, true);
+    html+=makeSbItem(a.id, a.title, 0);
   });
   document.getElementById('sbList').innerHTML=html;
 }
 
-function makeTreeRow(id, title, depth, hasChildren){
-  var pad=(depth*14+8);
+function makeSbItem(id, title, depth){
   var safeTitle=esc(title);
-  var arrowClass=hasChildren?'tree-arrow':'tree-arrow hidden';
-  var html='<div class="tree-node" data-id="'+id+'" data-depth="'+depth+'">';
-  html+='<div class="tree-row" id="sb-'+id+'" data-id="'+id+'" data-title="'+safeTitle+'" style="padding-left:'+pad+'px" onclick="handleTreeClick(this,event)">';
-  html+='<span class="'+arrowClass+'" data-pid="'+id+'" onclick="handleArrow(this.dataset.pid,event)">&#9654;</span>';
-  html+='<span class="tree-label">'+safeTitle+'</span>';
+  var pl=(depth*12+12);
+  var html='<div>';
+  html+='<div class="sb-item-wrap" style="display:flex;align-items:center;padding-left:'+pl+'px">';
+  html+='<span class="sb-arrow" data-pid="'+id+'" onclick="handleArrow(this,event)" style="flex-shrink:0;width:16px;font-size:9px;color:#b0b5c4;cursor:pointer;transition:transform .15s;display:inline-flex;align-items:center;justify-content:center">&#9654;</span>';
+  html+='<div class="sb-item" id="sb-'+id+'" data-id="'+id+'" data-title="'+safeTitle+'" data-depth="'+depth+'" style="flex:1;padding-left:4px" onclick="clickSbItem(this)">'+safeTitle+'</div>';
   html+='</div>';
-  html+='<div class="tree-children" id="tc-'+id+'"></div>';
+  html+='<div class="sb-children" id="tc-'+id+'" style="display:none"></div>';
   html+='</div>';
   return html;
 }
 
-function handleTreeClick(row, e){
-  if(e.target.classList.contains('tree-arrow')) return;
-  document.querySelectorAll('.tree-row').forEach(function(r){r.classList.remove('active');});
-  row.classList.add('active');
-  openArticle(row.dataset.id, row.dataset.title);
+function clickSbItem(el){
+  document.querySelectorAll('.sb-item').forEach(function(e){e.classList.remove('active');});
+  el.classList.add('active');
+  openArticle(el.dataset.id, el.dataset.title);
 }
 
-async function handleArrow(id, e){
+async function handleArrow(arrow, e){
   e.stopPropagation();
-  var arrow=e.target;
+  var id=arrow.dataset.pid;
   var childrenEl=document.getElementById('tc-'+id);
   if(!childrenEl) return;
 
-  if(childrenEl.classList.contains('open')){
-    childrenEl.classList.remove('open');
-    arrow.classList.remove('open');
+  var isOpen=childrenEl.style.display!=='none';
+  if(isOpen){
+    childrenEl.style.display='none';
+    arrow.style.transform='';
     return;
   }
 
-  // 이미 로드된 경우
   if(childrenEl.innerHTML){
-    childrenEl.classList.add('open');
-    arrow.classList.add('open');
+    childrenEl.style.display='block';
+    arrow.style.transform='rotate(90deg)';
     return;
   }
 
-  // lazy load
-  childrenEl.innerHTML='<div class="tree-loading">불러오는 중...</div>';
-  childrenEl.classList.add('open');
-  arrow.classList.add('open');
+  childrenEl.innerHTML='<div style="padding:.3rem 1rem;font-size:11px;color:#b0b5c4">불러오는 중...</div>';
+  childrenEl.style.display='block';
+  arrow.style.transform='rotate(90deg)';
 
-  try {
+  try{
     var r=await fetch('/api/children/'+id);
     var children=await r.json();
     if(!children.length){
       childrenEl.innerHTML='';
-      arrow.classList.add('hidden');
+      childrenEl.style.display='none';
+      arrow.style.color='transparent';
       return;
     }
-    var row=document.getElementById('sb-'+id);
-    var depth=parseInt(row.closest('.tree-node').dataset.depth||0)+1;
+    var parentEl=document.getElementById('sb-'+id);
+    var depth=parseInt(parentEl.dataset.depth||0)+1;
     var html='';
-    children.forEach(function(c){
-      html+=makeTreeRow(c.id, c.title, depth, true);
-    });
+    children.forEach(function(c){ html+=makeSbItem(c.id,c.title,depth); });
     childrenEl.innerHTML=html;
-  } catch(err){
+  }catch(err){
     childrenEl.innerHTML='';
+    childrenEl.style.display='none';
   }
 }
 
