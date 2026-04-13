@@ -52,13 +52,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .sidebar{background:#fff;border:1.5px solid #e8eaf0;border-radius:16px;overflow:hidden;position:sticky;top:72px;max-height:calc(100vh - 100px);overflow-y:auto}
 .sb-head{padding:.85rem 1rem;font-size:12px;font-weight:700;color:#9aa0b4;border-bottom:1px solid #f0f1f5;background:#fafbfc;letter-spacing:.04em;text-transform:uppercase}
 .sb-list{padding:.4rem 0}
-.sb-cat{padding:.65rem 1rem;font-size:13px;font-weight:600;cursor:pointer;color:#374151;display:flex;align-items:center;justify-content:space-between;transition:background .1s,color .1s;user-select:none}
-.sb-cat:hover{background:#f0f4ff;color:#1a56db}
-.sb-cat.open{color:#1a56db}
-.sb-cat .arrow{font-size:10px;transition:transform .2s;color:#b0b5c4}
-.sb-cat.open .arrow{transform:rotate(90deg)}
-.sb-sub-list{overflow:hidden;max-height:0;transition:max-height .25s ease}
-.sb-sub-list.open{max-height:600px}
+.tree-node{user-select:none}
+.tree-row{display:flex;align-items:center;gap:4px;padding:.45rem .8rem;cursor:pointer;color:#374151;font-size:13px;line-height:1.4;border-left:2px solid transparent;transition:background .1s,color .1s;border-radius:0}
+.tree-row:hover{background:#f0f4ff;color:#1a56db}
+.tree-row.active{background:#eef2ff;color:#1a56db;font-weight:600;border-left-color:#1a56db}
+.tree-toggle{flex-shrink:0;width:16px;height:16px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#b0b5c4;transition:transform .18s}
+.tree-toggle.open{transform:rotate(90deg)}
+.tree-toggle.empty{visibility:hidden}
+.tree-label{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tree-children{overflow:hidden;max-height:0;transition:max-height .22s ease}
+.tree-children.open{max-height:2000px}
 .sb-item{padding:.5rem 1rem .5rem 1.6rem;font-size:13px;cursor:pointer;color:#374151;border-left:2px solid transparent;transition:background .1s,color .1s;line-height:1.4}
 .sb-item:hover{background:#f0f4ff;color:#1a56db}
 .sb-item.active{background:#eef2ff;color:#1a56db;font-weight:600;border-left-color:#1a56db}
@@ -230,21 +233,68 @@ async function openCat(catId, catTitle){
 }
 
 function renderSidebar(articles, catTitle){
-  var html='<div class="sb-cat open" onclick="toggleCat(this)">'+esc(catTitle)+'<span class="arrow">&#9654;</span></div>';
-  html+='<div class="sb-sub-list open">';
+  var html='';
   articles.forEach(function(a){
-    var safeId=a.id;
-    var safeTitle=esc(a.title);
-    html+='<div class="sb-item" id="sb-'+safeId+'" data-id="'+safeId+'" data-title="'+safeTitle+'" onclick="openArticle(this.dataset.id,this.dataset.title)">'+safeTitle+'</div>';
+    html+=renderTreeNode(a, 0);
   });
-  html+='</div>';
   document.getElementById('sbList').innerHTML=html;
+  // 첫번째 article 자동 펼치기
+  var firstToggle=document.querySelector('.tree-toggle:not(.empty)');
+  if(firstToggle) toggleTree(firstToggle.parentElement);
 }
 
-function toggleCat(el){
-  el.classList.toggle('open');
-  var sub=el.nextElementSibling;
-  if(sub) sub.classList.toggle('open');
+function renderTreeNode(node, depth){
+  var pad=(depth*12+8);
+  var hasChildren=node.children&&node.children.length>0;
+  var safeId=node.id;
+  var safeTitle=esc(node.title);
+  var html='<div class="tree-node">';
+  html+='<div class="tree-row" id="sb-'+safeId+'" data-id="'+safeId+'" data-title="'+safeTitle+'" style="padding-left:'+pad+'px" onclick="handleTreeClick(this,event)">';
+  html+='<span class="tree-toggle'+(hasChildren?'':' empty')+'" onclick="toggleTree(this.parentElement,event)">&#9654;</span>';
+  html+='<span class="tree-label">'+safeTitle+'</span>';
+  html+='</div>';
+  if(hasChildren){
+    html+='<div class="tree-children">';
+    node.children.forEach(function(child){
+      html+=renderTreeNode(child, depth+1);
+    });
+    html+='</div>';
+  }
+  html+='</div>';
+  return html;
+}
+
+function handleTreeClick(row, e){
+  if(e.target.classList.contains('tree-toggle')) return;
+  var id=row.dataset.id;
+  var title=row.dataset.title;
+  document.querySelectorAll('.tree-row').forEach(function(r){r.classList.remove('active');});
+  row.classList.add('active');
+  // 자식 있으면 토글도
+  var children=row.nextElementSibling;
+  if(children&&children.classList.contains('tree-children')){
+    toggleChildren(row, children);
+  }
+  openArticle(id, title);
+}
+
+function toggleTree(row, e){
+  if(e) e.stopPropagation();
+  var children=row.nextElementSibling;
+  if(!children||!children.classList.contains('tree-children')) return;
+  toggleChildren(row, children);
+}
+
+function toggleChildren(row, children){
+  var toggle=row.querySelector('.tree-toggle');
+  var isOpen=children.classList.contains('open');
+  if(isOpen){
+    children.classList.remove('open');
+    if(toggle) toggle.classList.remove('open');
+  } else {
+    children.classList.add('open');
+    if(toggle) toggle.classList.add('open');
+  }
 }
 
 function openArticle(id, title){
