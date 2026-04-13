@@ -185,7 +185,7 @@ function renderCats(cats){
   if(!cats.length){g.innerHTML='<div style="color:#9aa0b4;font-size:14px">등록된 카테고리가 없습니다.</div>';return;}
   g.innerHTML=cats.map(function(c){
     return '<div class="cat-card" onclick="openCat(\''+c.id+'\',\''+esc(c.title)+'\')">'+
-      '<div class="cat-icon">'+(c.icon||'📄')+'</div>'+
+      '<div class="cat-icon">'+(c.icon&&c.icon.startsWith('http')?'<img src="'+c.icon+'" style="width:36px;height:36px;object-fit:contain">':( c.icon||'📄'))+'</div>'+
       '<div class="cat-name">'+esc(c.title)+'</div>'+
       (c.desc?'<div class="cat-desc">'+esc(c.desc)+'</div>':'')+
       '</div>';
