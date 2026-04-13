@@ -220,9 +220,7 @@ async function openCat(catId, catTitle){
       document.getElementById('sbList').innerHTML='<div style="padding:.8rem 1rem;font-size:13px;color:#9aa0b4">항목 없음</div>';
       loadPage(catId, catTitle);
     } else {
-      document.getElementById('sbList').innerHTML=articles.map(function(a){
-        return '<div class="sb-item" id="sb-'+a.id+'" onclick="openArticle(\''+a.id+'\',\''+esc(a.title)+'\')">'+esc(a.title)+'</div>';
-      }).join('');
+      renderSidebar(articles, catTitle);
     }
   }catch(e){
     document.getElementById('sbList').innerHTML='<div style="padding:.8rem 1rem;font-size:13px;color:#e24b4a">불러오기 실패</div>';
@@ -233,69 +231,89 @@ function renderSidebar(articles, catTitle){
   var list = document.getElementById('sbList');
   list.innerHTML = '';
   articles.forEach(function(a){
-    list.appendChild(makeSbNode(a.id, a.title, 0));
+    list.appendChild(makeSbNode(a.id, a.title, 0, a.type));
   });
 }
 
-function makeSbNode(id, title, depth){
+function makeSbNode(id, title, depth, type){
   var wrap = document.createElement('div');
+  wrap.className = 'tree-node';
 
   var row = document.createElement('div');
-  row.style.cssText = 'display:flex;align-items:center;padding-left:'+(depth*14+8)+'px';
+  row.className = 'tree-row';
+  row.style.paddingLeft = (depth * 16 + 10) + 'px';
 
   var arrow = document.createElement('span');
-  arrow.style.cssText = 'flex-shrink:0;width:16px;height:16px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#b0b5c4;cursor:pointer;transition:transform .18s';
+  arrow.className = 'tree-arrow';
   arrow.innerHTML = '&#9654;';
 
   var label = document.createElement('div');
-  label.className = 'sb-item';
+  label.className = 'tree-label';
   label.id = 'sb-'+id;
-  label.style.cssText = 'flex:1;padding-left:4px;border-left:none';
   label.textContent = title;
 
   var children = document.createElement('div');
   children.id = 'tc-'+id;
-  children.style.display = 'none';
+  children.className = 'tree-children';
 
-  // 화살표 클릭
-  arrow.addEventListener('click', function(e){
-    e.stopPropagation();
-    if(children.style.display !== 'none'){
-      children.style.display = 'none';
-      arrow.style.transform = '';
-    } else {
-      if(children.dataset.loaded){
-        children.style.display = 'block';
-        arrow.style.transform = 'rotate(90deg)';
-      } else {
-        children.dataset.loaded = '1';
-        children.style.display = 'block';
-        arrow.style.transform = 'rotate(90deg)';
-        children.innerHTML = '<div style="padding:.3rem 1rem;font-size:11px;color:#b0b5c4">불러오는 중...</div>';
-        fetch('/api/children/'+id).then(function(r){return r.json();}).then(function(list){
-          children.innerHTML = '';
-          if(!list.length){
-            arrow.style.color = 'transparent';
-            arrow.style.cursor = 'default';
-            children.style.display = 'none';
-            return;
-          }
-          list.forEach(function(c){
-            children.appendChild(makeSbNode(c.id, c.title, depth+1));
-          });
-        }).catch(function(){
-          children.innerHTML = '';
-          children.style.display = 'none';
-        });
-      }
+  function closeChildren(){
+    children.classList.remove('open');
+    arrow.classList.remove('open');
+  }
+
+  function openChildren(){
+    children.classList.add('open');
+    arrow.classList.add('open');
+  }
+
+  function hideArrow(){
+    arrow.classList.add('hidden');
+  }
+
+  function toggleChildren(e){
+    if(e)e.stopPropagation();
+    if(arrow.classList.contains('hidden')) return;
+    if(children.classList.contains('open')){
+      closeChildren();
+      return;
     }
-  });
+    if(children.dataset.loaded === '1'){
+      openChildren();
+      return;
+    }
+    children.dataset.loaded = '1';
+    openChildren();
+    children.innerHTML = '<div class="tree-loading">불러오는 중...</div>';
+    fetch('/api/children/'+id)
+      .then(function(r){ return r.json(); })
+      .then(function(list){
+        children.innerHTML = '';
+        if(!list.length){
+          hideArrow();
+          closeChildren();
+          return;
+        }
+        list.forEach(function(c){
+          children.appendChild(makeSbNode(c.id, c.title, depth + 1, 'child_page'));
+        });
+      })
+      .catch(function(){
+        children.innerHTML = '';
+        closeChildren();
+      });
+  }
 
-  // 항목 클릭
-  label.addEventListener('click', function(){
-    document.querySelectorAll('.sb-item').forEach(function(e){e.classList.remove('active');});
-    label.classList.add('active');
+  if(type !== 'kb:sub-category' && type !== 'child_page'){
+    hideArrow();
+  }
+
+  arrow.addEventListener('click', toggleChildren);
+
+  row.addEventListener('click', function(){
+    document.querySelectorAll('.tree-row').forEach(function(node){ node.classList.remove('active'); });
+    row.classList.add('active');
     openArticle(id, title);
+    if(type === 'kb:sub-category' || type === 'child_page') toggleChildren();
   });
 
   row.appendChild(arrow);
@@ -306,9 +324,9 @@ function makeSbNode(id, title, depth){
 }
 
 function openArticle(id, title){
-  document.querySelectorAll('.sb-item').forEach(function(el){el.classList.remove('active');});
+  document.querySelectorAll('.tree-row').forEach(function(el){el.classList.remove('active');});
   var el=document.getElementById('sb-'+id);
-  if(el)el.classList.add('active');
+  if(el && el.parentElement)el.parentElement.classList.add('active');
   setBc([{label:'홈',fn:'goHome()'},{label:currentCat.title,fn:'openCat("'+currentCat.id+'","'+esc(currentCat.title)+'")'},{label:title}]);
   loadPage(id, title);
 }
