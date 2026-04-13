@@ -243,7 +243,7 @@ function makeTreeRow(id, title, depth, hasChildren){
   var arrowClass=hasChildren?'tree-arrow':'tree-arrow hidden';
   var html='<div class="tree-node" data-id="'+id+'" data-depth="'+depth+'">';
   html+='<div class="tree-row" id="sb-'+id+'" data-id="'+id+'" data-title="'+safeTitle+'" style="padding-left:'+pad+'px" onclick="handleTreeClick(this,event)">';
-  html+='<span class="'+arrowClass+'" onclick="handleArrow(''+id+'',event)">&#9654;</span>';
+  html+='<span class="'+arrowClass+'" data-pid="'+id+'" onclick="handleArrow(this.dataset.pid,event)">&#9654;</span>';
   html+='<span class="tree-label">'+safeTitle+'</span>';
   html+='</div>';
   html+='<div class="tree-children" id="tc-'+id+'"></div>';
