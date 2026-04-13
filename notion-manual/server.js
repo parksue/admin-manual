@@ -33,8 +33,7 @@ async function queryDB() {
       })
     }
   );
-  const data = await response.json();
-  return data;
+  return await response.json();
 }
 
 function getTitle(page) {
@@ -51,30 +50,6 @@ function getDescription(page) {
 function getParentName(page) {
   const t = page.properties?.['KB Parent']?.rich_text;
   return t ? t.map(x => x.plain_text).join('').trim() : '';
-}
-
-// 하위 페이지를 재귀적으로 가져오기 (최대 depth)
-async function fetchChildPages(pageId, depth) {
-  if (depth <= 0) return [];
-  const response = await fetch(
-    `https://api.notion.com/v1/blocks/${pageId}/children?page_size=100`,
-    { headers: notionHeaders() }
-  );
-  const data = await response.json();
-  if (!data.results) return [];
-
-  const children = [];
-  for (const block of data.results) {
-    if (block.type === 'child_page') {
-      const child = {
-        id: block.id,
-        title: block.child_page.title,
-        children: depth > 1 ? await fetchChildPages(block.id, depth - 1) : []
-      };
-      children.push(child);
-    }
-  }
-  return children;
 }
 
 // 카테고리 목록
@@ -96,29 +71,38 @@ app.get('/api/categories', async (req, res) => {
   }
 });
 
-// 카테고리의 article 목록 + 각 article의 하위 페이지 트리 (3단계)
+// 카테고리의 article 목록 (하위 페이지 포함 안함 - 빠른 로드)
 app.get('/api/articles/:categoryTitle', async (req, res) => {
   try {
     const data = await queryDB();
     const pages = data.results || [];
     const catTitle = decodeURIComponent(req.params.categoryTitle);
-    const articles = pages.filter(p => {
-      const type = getPageType(p);
-      const parent = getParentName(p);
-      return (type === 'kb:article' || type === 'kb:sub-category') && parent === catTitle;
-    });
+    const articles = pages
+      .filter(p => {
+        const type = getPageType(p);
+        const parent = getParentName(p);
+        return (type === 'kb:article' || type === 'kb:sub-category') && parent === catTitle;
+      })
+      .map(p => ({ id: p.id, title: getTitle(p), type: getPageType(p) }));
+    res.json(articles);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
 
-    const result = [];
-    for (const p of articles) {
-      const children = await fetchChildPages(p.id, 3); // 3단계 하위
-      result.push({
-        id: p.id,
-        title: getTitle(p),
-        type: getPageType(p),
-        children
-      });
-    }
-    res.json(result);
+// 특정 페이지의 직속 하위 페이지만 (lazy load용)
+app.get('/api/children/:pageId', async (req, res) => {
+  try {
+    const response = await fetch(
+      `https://api.notion.com/v1/blocks/${req.params.pageId}/children?page_size=100`,
+      { headers: notionHeaders() }
+    );
+    const data = await response.json();
+    if (!data.results) return res.json([]);
+    const children = data.results
+      .filter(b => b.type === 'child_page')
+      .map(b => ({ id: b.id, title: b.child_page.title }));
+    res.json(children);
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
@@ -179,10 +163,7 @@ app.get('/api/image', async (req, res) => {
     let imageUrl = url;
     if (blockId) {
       try {
-        const blockRes = await fetch(
-          `https://api.notion.com/v1/blocks/${blockId}`,
-          { headers: notionHeaders() }
-        );
+        const blockRes = await fetch(`https://api.notion.com/v1/blocks/${blockId}`, { headers: notionHeaders() });
         const block = await blockRes.json();
         if (block.image?.file?.url) imageUrl = block.image.file.url;
         else if (block.image?.external?.url) imageUrl = block.image.external.url;
