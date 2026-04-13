@@ -71,7 +71,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .nb-ol{padding-left:1.4rem;margin-bottom:.7rem}
 .nb-ol li{font-size:14px;line-height:1.8;color:#374151;margin-bottom:.2rem}
 .nb-img{margin:1rem 0;text-align:center}
-.nb-img img{max-width:100%;border-radius:10px;border:1px solid #e8eaf0}
+.nb-img img{max-width:100%;border-radius:0;border:1px solid #e8eaf0;cursor:zoom-in;transition:opacity .15s}
 .nb-img .cap{font-size:12px;color:#9aa0b4;margin-top:6px}
 .nb-callout{background:#eef2ff;border-left:3px solid #1a56db;border-radius:10px;padding:.85rem 1rem;margin:.8rem 0;font-size:14px;color:#374151;display:flex;gap:10px;line-height:1.7}
 .nb-callout .ico{font-size:18px;flex-shrink:0;margin-top:1px}
@@ -108,9 +108,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   .c-head{padding:1rem 1rem .8rem}
   .hero h1{font-size:20px}
 }
+
+.lb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;align-items:center;justify-content:center;cursor:zoom-out}
+.lb-overlay.show{display:flex}
+.lb-img{max-width:92vw;max-height:92vh;object-fit:contain;border-radius:0}
+.lb-close{position:fixed;top:16px;right:20px;color:#fff;font-size:28px;cursor:pointer;line-height:1;opacity:.8}
+.lb-close:hover{opacity:1}
 </style>
 </head>
 <body>
+<div class="lb-overlay" id="lbOverlay" onclick="closeLb()"><span class="lb-close">✕</span><img class="lb-img" id="lbImg" src=""></div>
 <div class="header">
   <div class="header-inner">
     <div class="logo" onclick="goHome()">📋 프로그램<span class="logo-dot"> 매뉴얼</span></div>
@@ -327,7 +334,7 @@ function renderBlocks(blocks){
       case 'image':
         var src=b.image.type==='external'?b.image.external.url:'/api/image?blockId='+b.id+'&url='+encodeURIComponent(b.image.file.url);
         var cap=b.image.caption?rt(b.image.caption):'';
-        html+='<div class="nb-img"><img src="'+src+'" alt="이미지" loading="lazy">'+(cap?'<div class="cap">'+cap+'</div>':'')+'</div>';
+        html+='<div class="nb-img"><img src="'+src+'" alt="이미지" loading="lazy" onclick="openLb(this)">'+(cap?'<div class="cap">'+cap+'</div>':'')+'</div>';
         break;
       case 'callout':
         var ico=(b.callout.icon&&b.callout.icon.emoji)?b.callout.icon.emoji:'ℹ️';
@@ -392,6 +399,18 @@ function rt(arr){
 function esc(s){
   return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
+
+
+function openLb(img){
+  document.getElementById('lbImg').src=img.src;
+  document.getElementById('lbOverlay').className='lb-overlay show';
+  document.body.style.overflow='hidden';
+}
+function closeLb(){
+  document.getElementById('lbOverlay').className='lb-overlay';
+  document.body.style.overflow='';
+}
+document.addEventListener('keydown',function(e){if(e.key==='Escape')closeLb();});
 
 loadCategories();
 </script>
