@@ -230,73 +230,79 @@ async function openCat(catId, catTitle){
 }
 
 function renderSidebar(articles, catTitle){
-  var html='';
+  var list = document.getElementById('sbList');
+  list.innerHTML = '';
   articles.forEach(function(a){
-    html+=makeSbItem(a.id, a.title, 0);
+    list.appendChild(makeSbNode(a.id, a.title, 0));
   });
-  document.getElementById('sbList').innerHTML=html;
 }
 
-function makeSbItem(id, title, depth){
-  var safeTitle=esc(title);
-  var pl=(depth*12+12);
-  var html='<div>';
-  html+='<div class="sb-item-wrap" style="display:flex;align-items:center;padding-left:'+pl+'px">';
-  html+='<span class="sb-arrow" data-pid="'+id+'" onclick="handleArrow(this,event)" style="flex-shrink:0;width:16px;font-size:9px;color:#b0b5c4;cursor:pointer;transition:transform .15s;display:inline-flex;align-items:center;justify-content:center">&#9654;</span>';
-  html+='<div class="sb-item" id="sb-'+id+'" data-id="'+id+'" data-title="'+safeTitle+'" data-depth="'+depth+'" style="flex:1;padding-left:4px" onclick="clickSbItem(this)">'+safeTitle+'</div>';
-  html+='</div>';
-  html+='<div class="sb-children" id="tc-'+id+'" style="display:none"></div>';
-  html+='</div>';
-  return html;
-}
+function makeSbNode(id, title, depth){
+  var wrap = document.createElement('div');
 
-function clickSbItem(el){
-  document.querySelectorAll('.sb-item').forEach(function(e){e.classList.remove('active');});
-  el.classList.add('active');
-  openArticle(el.dataset.id, el.dataset.title);
-}
+  var row = document.createElement('div');
+  row.style.cssText = 'display:flex;align-items:center;padding-left:'+(depth*14+8)+'px';
 
-async function handleArrow(arrow, e){
-  e.stopPropagation();
-  var id=arrow.dataset.pid;
-  var childrenEl=document.getElementById('tc-'+id);
-  if(!childrenEl) return;
+  var arrow = document.createElement('span');
+  arrow.style.cssText = 'flex-shrink:0;width:16px;height:16px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#b0b5c4;cursor:pointer;transition:transform .18s';
+  arrow.innerHTML = '&#9654;';
 
-  var isOpen=childrenEl.style.display!=='none';
-  if(isOpen){
-    childrenEl.style.display='none';
-    arrow.style.transform='';
-    return;
-  }
+  var label = document.createElement('div');
+  label.className = 'sb-item';
+  label.id = 'sb-'+id;
+  label.style.cssText = 'flex:1;padding-left:4px;border-left:none';
+  label.textContent = title;
 
-  if(childrenEl.innerHTML){
-    childrenEl.style.display='block';
-    arrow.style.transform='rotate(90deg)';
-    return;
-  }
+  var children = document.createElement('div');
+  children.id = 'tc-'+id;
+  children.style.display = 'none';
 
-  childrenEl.innerHTML='<div style="padding:.3rem 1rem;font-size:11px;color:#b0b5c4">불러오는 중...</div>';
-  childrenEl.style.display='block';
-  arrow.style.transform='rotate(90deg)';
-
-  try{
-    var r=await fetch('/api/children/'+id);
-    var children=await r.json();
-    if(!children.length){
-      childrenEl.innerHTML='';
-      childrenEl.style.display='none';
-      arrow.style.color='transparent';
-      return;
+  // 화살표 클릭
+  arrow.addEventListener('click', function(e){
+    e.stopPropagation();
+    if(children.style.display !== 'none'){
+      children.style.display = 'none';
+      arrow.style.transform = '';
+    } else {
+      if(children.dataset.loaded){
+        children.style.display = 'block';
+        arrow.style.transform = 'rotate(90deg)';
+      } else {
+        children.dataset.loaded = '1';
+        children.style.display = 'block';
+        arrow.style.transform = 'rotate(90deg)';
+        children.innerHTML = '<div style="padding:.3rem 1rem;font-size:11px;color:#b0b5c4">불러오는 중...</div>';
+        fetch('/api/children/'+id).then(function(r){return r.json();}).then(function(list){
+          children.innerHTML = '';
+          if(!list.length){
+            arrow.style.color = 'transparent';
+            arrow.style.cursor = 'default';
+            children.style.display = 'none';
+            return;
+          }
+          list.forEach(function(c){
+            children.appendChild(makeSbNode(c.id, c.title, depth+1));
+          });
+        }).catch(function(){
+          children.innerHTML = '';
+          children.style.display = 'none';
+        });
+      }
     }
-    var parentEl=document.getElementById('sb-'+id);
-    var depth=parseInt(parentEl.dataset.depth||0)+1;
-    var html='';
-    children.forEach(function(c){ html+=makeSbItem(c.id,c.title,depth); });
-    childrenEl.innerHTML=html;
-  }catch(err){
-    childrenEl.innerHTML='';
-    childrenEl.style.display='none';
-  }
+  });
+
+  // 항목 클릭
+  label.addEventListener('click', function(){
+    document.querySelectorAll('.sb-item').forEach(function(e){e.classList.remove('active');});
+    label.classList.add('active');
+    openArticle(id, title);
+  });
+
+  row.appendChild(arrow);
+  row.appendChild(label);
+  wrap.appendChild(row);
+  wrap.appendChild(children);
+  return wrap;
 }
 
 function openArticle(id, title){
