@@ -42,7 +42,13 @@ async function getDB() {
 
   cache.categories = pages
     .filter(p => getType(p) === 'kb:category' && !getParent(p))
-    .map(p => ({ id: p.id, title: getTitle(p), desc: getDesc(p), icon: p.icon?.emoji || '📄' }));
+    .map(p => {
+      let icon = '📄';
+      if (p.icon?.type === 'emoji') icon = p.icon.emoji;
+      else if (p.icon?.type === 'external') icon = p.icon.external.url;
+      else if (p.icon?.type === 'file') icon = p.icon.file.url;
+      return { id: p.id, title: getTitle(p), desc: getDesc(p), icon };
+    });
 
   cache.articles = {};
   cache.allArticles = [];
