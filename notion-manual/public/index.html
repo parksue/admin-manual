@@ -230,10 +230,12 @@ async function openCat(catId, catTitle){
 }
 
 function renderSidebar(articles, catTitle){
-  var html='<div class="sb-cat open" onclick="toggleCat(this)">'+esc(catTitle)+'<span class="arrow">▶</span></div>';
+  var html='<div class="sb-cat open" onclick="toggleCat(this)">'+esc(catTitle)+'<span class="arrow">&#9654;</span></div>';
   html+='<div class="sb-sub-list open">';
   articles.forEach(function(a){
-    html+='<div class="sb-item" id="sb-'+a.id+'" onclick="openArticle(''+a.id+'',''+esc(a.title)+'')">'+esc(a.title)+'</div>';
+    var safeId=a.id;
+    var safeTitle=esc(a.title);
+    html+='<div class="sb-item" id="sb-'+safeId+'" data-id="'+safeId+'" data-title="'+safeTitle+'" onclick="openArticle(this.dataset.id,this.dataset.title)">'+safeTitle+'</div>';
   });
   html+='</div>';
   document.getElementById('sbList').innerHTML=html;
