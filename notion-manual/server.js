@@ -27,7 +27,10 @@ async function queryDB() {
     {
       method: 'POST',
       headers: notionHeaders(),
-      body: JSON.stringify({ page_size: 100, sorts: [{ property: "Sort", direction: "ascending" }] }) // Publish 필터 일단 제거
+      body: JSON.stringify({
+        page_size: 100,
+        sorts: [{ property: 'Sort', direction: 'ascending' }]
+      })
     }
   );
   const data = await response.json();
@@ -50,25 +53,35 @@ function getParentName(page) {
   return t ? t.map(x => x.plain_text).join('').trim() : '';
 }
 
-// 디버그용 - DB 전체 raw 응답
-app.get('/api/debug', async (req, res) => {
-  try {
-    const data = await queryDB();
-    res.json(data);
-  } catch (e) {
-    res.status(500).json({ error: e.message });
+// 하위 페이지를 재귀적으로 가져오기 (최대 depth)
+async function fetchChildPages(pageId, depth) {
+  if (depth <= 0) return [];
+  const response = await fetch(
+    `https://api.notion.com/v1/blocks/${pageId}/children?page_size=100`,
+    { headers: notionHeaders() }
+  );
+  const data = await response.json();
+  if (!data.results) return [];
+
+  const children = [];
+  for (const block of data.results) {
+    if (block.type === 'child_page') {
+      const child = {
+        id: block.id,
+        title: block.child_page.title,
+        children: depth > 1 ? await fetchChildPages(block.id, depth - 1) : []
+      };
+      children.push(child);
+    }
   }
-});
+  return children;
+}
 
 // 카테고리 목록
 app.get('/api/categories', async (req, res) => {
   try {
     const data = await queryDB();
     const pages = data.results || [];
-    console.log('전체 페이지 수:', pages.length);
-    pages.forEach(p => {
-      console.log('페이지:', getTitle(p), '| 타입:', getPageType(p), '| 부모:', getParentName(p));
-    });
     const categories = pages
       .filter(p => getPageType(p) === 'kb:category' && !getParentName(p))
       .map(p => ({
@@ -83,24 +96,35 @@ app.get('/api/categories', async (req, res) => {
   }
 });
 
+// 카테고리의 article 목록 + 각 article의 하위 페이지 트리 (3단계)
 app.get('/api/articles/:categoryTitle', async (req, res) => {
   try {
     const data = await queryDB();
     const pages = data.results || [];
     const catTitle = decodeURIComponent(req.params.categoryTitle);
-    const articles = pages
-      .filter(p => {
-        const type = getPageType(p);
-        const parent = getParentName(p);
-        return (type === 'kb:article' || type === 'kb:sub-category') && parent === catTitle;
-      })
-      .map(p => ({ id: p.id, title: getTitle(p), type: getPageType(p) }));
-    res.json(articles);
+    const articles = pages.filter(p => {
+      const type = getPageType(p);
+      const parent = getParentName(p);
+      return (type === 'kb:article' || type === 'kb:sub-category') && parent === catTitle;
+    });
+
+    const result = [];
+    for (const p of articles) {
+      const children = await fetchChildPages(p.id, 3); // 3단계 하위
+      result.push({
+        id: p.id,
+        title: getTitle(p),
+        type: getPageType(p),
+        children
+      });
+    }
+    res.json(result);
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
 });
 
+// 검색용
 app.get('/api/all-articles', async (req, res) => {
   try {
     const data = await queryDB();
@@ -114,6 +138,7 @@ app.get('/api/all-articles', async (req, res) => {
   }
 });
 
+// 페이지 내용
 async function fetchBlocks(blockId) {
   const response = await fetch(
     `https://api.notion.com/v1/blocks/${blockId}/children?page_size=100`,
@@ -124,7 +149,7 @@ async function fetchBlocks(blockId) {
   const blocks = [];
   for (const block of data.results) {
     const b = { ...block };
-    if (block.has_children) b.children = await fetchBlocks(block.id);
+    if (block.has_children && block.type !== 'child_page') b.children = await fetchBlocks(block.id);
     blocks.push(b);
   }
   return blocks;
@@ -146,11 +171,11 @@ app.get('/api/page/:pageId', async (req, res) => {
   }
 });
 
+// 이미지 프록시
 app.get('/api/image', async (req, res) => {
   try {
     const url = decodeURIComponent(req.query.url);
     const blockId = req.query.blockId;
-
     let imageUrl = url;
     if (blockId) {
       try {
@@ -163,9 +188,8 @@ app.get('/api/image', async (req, res) => {
         else if (block.image?.external?.url) imageUrl = block.image.external.url;
       } catch (e) {}
     }
-
     const imgRes = await fetch(imageUrl);
-    if (!imgRes.ok) throw new Error('Image fetch failed: ' + imgRes.status);
+    if (!imgRes.ok) throw new Error('Image fetch failed');
     res.set('Content-Type', imgRes.headers.get('content-type') || 'image/jpeg');
     res.set('Cache-Control', 'public, max-age=1800');
     imgRes.body.pipe(res);
